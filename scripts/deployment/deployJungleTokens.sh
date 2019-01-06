@@ -79,12 +79,12 @@ sleep 1
 ##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$NTC_RESERVE_ACCOUNT\", \"100.00 NTC\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
 ##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$NTD_RESERVE_ACCOUNT\", \"100.0 NTD\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
 
-#move tokens to alice {TODO}}
+#move tokens to alice
 ###$jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0000 OTA\", \"memo\" ]" -p $TOKEN_ACCOUNT@active
 ##$jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.000 OTB\", \"memo\" ]" -p $TOKEN_ACCOUNT@active
 ##$jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.00 OTC\", \"memo\" ]" -p $TOKEN_ACCOUNT@active
 ##$jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0 OTD\", \"memo\" ]" -p $TOKEN_ACCOUNT@active
-##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0000 NTA\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
+###$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0000 NTA\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
 ##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.000 NTB\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
 ##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.00 NTC\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
 ##$jleos push action $ANOTHER_TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0 NTD\", \"memo\" ]" -p $ANOTHER_TOKEN_ACCOUNT@active
@@ -94,7 +94,7 @@ sleep 1
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $OTB_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $OTC_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $OTD_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
-## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $NTA_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
+###$jleos system delegatebw $OTA_RESERVE_ACCOUNT $NTA_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $NTB_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $NTC_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
 ## $jleos system delegatebw $OTA_RESERVE_ACCOUNT $NTD_RESERVE_ACCOUNT "1.0 EOS" "1.0 EOS"
@@ -104,7 +104,7 @@ sleep 1
 ## $jleos system buyram $ACCOUNT_NAME $OTB_RESERVE_ACCOUNT --kbytes 400
 ## $jleos system buyram $ACCOUNT_NAME $OTC_RESERVE_ACCOUNT --kbytes 400
 ## $jleos system buyram $ACCOUNT_NAME $OTD_RESERVE_ACCOUNT --kbytes 400
-## $jleos system buyram $ACCOUNT_NAME $NTA_RESERVE_ACCOUNT --kbytes 400
+###$jleos system buyram $ACCOUNT_NAME $NTA_RESERVE_ACCOUNT --kbytes 400
 ## $jleos system buyram $ACCOUNT_NAME $NTB_RESERVE_ACCOUNT --kbytes 400
 ## $jleos system buyram $ACCOUNT_NAME $NTC_RESERVE_ACCOUNT --kbytes 400
 ## $jleos system buyram $ACCOUNT_NAME $NTD_RESERVE_ACCOUNT --kbytes 400
@@ -114,7 +114,7 @@ sleep 1
 ##jleos set contract $OTB_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
 ##jleos set contract $OTC_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
 ##jleos set contract $OTD_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
-##jleos set contract $NTA_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
+###$jleos set contract $NTA_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $NTA_RESERVE_ACCOUNT@active
 ##jleos set contract $NTB_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
 ##jleos set contract $NTC_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
 ##jleos set contract $NTD_RESERVE_ACCOUNT contracts/Reserve/AmmReserve AmmReserve.wasm --abi AmmReserve.abi -p $OTA_RESERVE_ACCOUNT@active
@@ -124,7 +124,7 @@ sleep 1
 ##$jleos push action $OTB_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0000 OTB\", \"$TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $OTB_RESERVE_ACCOUNT@active
 ##$jleos push action $OTC_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.000 OTC\", \"$TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $OTC_RESERVE_ACCOUNT@active
 ##$jleos push action $OTD_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.00 OTD\", \"$TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $OTD_RESERVE_ACCOUNT@active
-##$jleos push action $NTA_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0000 NTA\", \"$ANOTHER_TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NTA_RESERVE_ACCOUNT@active
+###$jleos push action $NTA_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0000 NTA\", \"$ANOTHER_TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NTA_RESERVE_ACCOUNT@active
 ##$jleos push action $NTB_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.000 NTB\", \"$ANOTHER_TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NTB_RESERVE_ACCOUNT@active
 ##$jleos push action $NTC_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.00 NTC\", \"$ANOTHER_TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NTC_RESERVE_ACCOUNT@active
 ##$jleos push action $NTD_RESERVE_ACCOUNT  init "[\"$RESERVE_OWNER_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0 NTD\", \"$ANOTHER_TOKEN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $OTD_RESERVE_ACCOUNT@active
@@ -134,7 +134,7 @@ sleep 1
 ##$jleos push action $OTB_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
 ##$jleos push action $OTC_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
 ##$jleos push action $OTD_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
-##$jleos push action $NTA_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
+###$jleos push action $NTA_RESERVE_ACCOUNT setparams '[ "0.1", "0.03", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
 ##$jleos push action $NTB_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
 ##$jleos push action $NTC_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
 ##$jleos push action $NTD_RESERVE_ACCOUNT setparams '[ "0.1", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p $RESERVE_OWNER_ACCOUNT@active
@@ -144,7 +144,7 @@ sleep 1
 ##$jleos set account permission $OTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTB_RESERVE_ACCOUNT@active
 ##$jleos set account permission $OTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTC_RESERVE_ACCOUNT@active
 ##$jleos set account permission $OTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTD_RESERVE_ACCOUNT@active
-##$jleos set account permission $NTA_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTA_RESERVE_ACCOUNT@active
+###$jleos set account permission $NTA_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$NTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTA_RESERVE_ACCOUNT@active
 ##$jleos set account permission $NTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTB_RESERVE_ACCOUNT@active
 ##$jleos set account permission $NTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTC_RESERVE_ACCOUNT@active
 ##$jleos set account permission $NTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTD_RESERVE_ACCOUNT@active
@@ -155,18 +155,18 @@ sleep 1
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$OTB_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$OTC_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$OTD_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
-##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTA_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
+###$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTA_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTB_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTB_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTC_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT addreserve "[ \"$NTD_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 
 #list reserve pairs
-###$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$OTA_RESERVE_ACCOUNT\", \"0.0000 OTA\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
+###$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$OTA_RESERVE_ACCOUNT\", \"0.0000 OTA\", \"$TOKEN_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$OTB_RESERVE_ACCOUNT\", \"0.000 OTB\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$OTC_RESERVE_ACCOUNT\", \"0.00 OTC\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$OTD_RESERVE_ACCOUNT\", \"0.0 OTD\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
-##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$NTA_RESERVE_ACCOUNT\", \"0.0000 NTA\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
+###$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$NTA_RESERVE_ACCOUNT\", \"0.0000 NTA\", \"$ANOTHER_TOKEN_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$NTB_RESERVE_ACCOUNT\", \"0.000 NTB\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$NTC_RESERVE_ACCOUNT\", \"0.00 NTC\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 ##$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$NTD_RESERVE_ACCOUNT\", \"0.0 NTD\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
@@ -177,12 +177,14 @@ sleep 1
 # end of deployment, now out trying stuff #
 
 # complete a sell
-### working $jleos push action $TOKEN_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 OTA\", \"$ALICE_ACCOUNT,$TOKEN_ACCOUNT,4 OTA,$EOS_ACCOUNT,4 EOS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
+### $jleos push action $TOKEN_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 SYS\", \"$ALICE_ACCOUNT,$TOKEN_ACCOUNT,4 SYS,$EOS_ACCOUNT,4 EOS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
+### $jleos push action $TOKEN_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 OTA\", \"$ALICE_ACCOUNT,$TOKEN_ACCOUNT,4 OTA,$EOS_ACCOUNT,4 EOS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
+###$jleos push action $ANOTHER_TOKEN_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 NTA\", \"$ALICE_ACCOUNT,$ANOTHER_TOKEN_ACCOUNT,4 NTA,$EOS_ACCOUNT,4 EOS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
 
 # complete a buy
-# not wotking: $jleos push action $EOS_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 EOS\", \"$ALICE_ACCOUNT,$EOS_ACCOUNT,4 EOS,$TOKEN_ACCOUNT,4 SYS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
-# not working: $jleos push action $EOS_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 EOS\", \"$ALICE_ACCOUNT,$EOS_ACCOUNT,4 EOS,$TOKEN_ACCOUNT,4 OTA,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
-
+### $jleos push action $EOS_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 EOS\", \"$ALICE_ACCOUNT,$EOS_ACCOUNT,4 EOS,$TOKEN_ACCOUNT,4 SYS,$MOSHE_ACCOUNT,100000,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
+###$jleos push action $EOS_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 EOS\", \"$ALICE_ACCOUNT,$EOS_ACCOUNT,4 EOS,$TOKEN_ACCOUNT,4 OTA,$MOSHE_ACCOUNT,100000,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
+###$jleos push action $EOS_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 EOS\", \"$ALICE_ACCOUNT,$EOS_ACCOUNT,4 EOS,$ANOTHER_TOKEN_ACCOUNT,4 NTA,$MOSHE_ACCOUNT,100000,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
 
 #$jleos get table $NETWORK_ACCOUNT $NETWORK_ACCOUNT reservespert
 ##!!!!$jleos push action eosio.token transfer "[ \"$MOSHE_ACCOUNT\", \"$OTA_RESERVE_ACCOUNT\", \"0.100 EOS\", \"$MOSHE_ACCOUNT\" ]" -p $NETWORK_ACCOUNT@active

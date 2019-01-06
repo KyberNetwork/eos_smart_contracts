@@ -51,7 +51,7 @@ $jleos set account permission $NETWORK_ACCOUNT active "{\"threshold\": 1, \"keys
 $jleos set account permission $NETWORK_ACCOUNT owner "{\"threshold\": 1, \"keys\":[] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
 
 $jleos push action $NETWORK_ACCOUNT addreserve "[ \"$RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
-$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$RESERVE_ACCOUNT\", \"0.0000 SYS\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
+$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$RESERVE_ACCOUNT\", \"0.0000 SYS\", \"$TOKEN_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
 
 $jleos get table $NETWORK_ACCOUNT $NETWORK_ACCOUNT reservespert
 
