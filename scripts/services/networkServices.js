@@ -33,7 +33,6 @@ module.exports.getEnabled = async function(options){
 }
 
 module.exports.getRate = async function(options) {
-    // TODO: missing slippageRate calculation and handling
 
     eos = options.eos
     srcSymbol = options.srcSymbol
@@ -50,22 +49,27 @@ module.exports.getRate = async function(options) {
     })
 
     let bestRate = 0
-    let reserveContractsList = reservesReply.rows[0].reserve_contracts
-    let arrayLength = reservesReply.rows[0].num_reserves
-    for (var i = 0; i < arrayLength; i++) {
-        reserveName = reserveContractsList[i];
-        currentRate = await reserveServices.getRate({
-            eos:eos,
-            reserveAccount:reserveName,
-            eosTokenAccount:eosTokenAccount,
-            srcSymbol:srcSymbol,
-            destSymbol:destSymbol,
-            srcAmount:srcAmount
-        })
-        if(currentRate > bestRate) {
-            bestRate = currentRate
+    let tokenSymbol = (srcSymbol == "EOS" ? destSymbol : srcSymbol)
+    for (var t = 0; t < reservesReply.rows.length; t++) { 
+        if (tokenSymbol == reservesReply.rows[t].symbol.substring(2)) {
+            for (var i = 0; i < reservesReply.rows[t].num_reserves; i++) {
+                reserveName = reservesReply.rows[t].reserve_contracts[i];
+                currentRate = await reserveServices.getRate({
+                    eos:eos,
+                    reserveAccount:reserveName,
+                    eosTokenAccount:eosTokenAccount,
+                    srcSymbol:srcSymbol,
+                    destSymbol:destSymbol,
+                    srcAmount:srcAmount
+                })
+                if(currentRate > bestRate) {
+                    bestRate = currentRate
+                }
+            }
+            break;
         }
     }
+
     return bestRate
 }
 
