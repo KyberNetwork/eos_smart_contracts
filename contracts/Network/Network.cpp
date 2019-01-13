@@ -1,7 +1,7 @@
 #include "./Network.hpp"
 #include <math.h>
 
-ACTION Network::init(name owner, bool enable) {
+ACTION Network::init(name owner, name eos_contract, bool enable) {
     require_auth(_self);
 
     state_type state_instance(_self, _self.value);
@@ -9,6 +9,7 @@ ACTION Network::init(name owner, bool enable) {
 
     state_t new_state;
     new_state.owner = owner;
+    new_state.eos_contract = eos_contract;
     new_state.is_enabled = enable;
     state_instance.set(new_state, _self);
 }
@@ -111,19 +112,28 @@ void Network::trade0(name from, name to, asset quantity, string memo) {
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
 
-    auto memo_struct = parse_memo(memo);
-
-    eosio_assert(_code == memo_struct.src_contract, "src token contract must match memo.");
-    eosio_assert(quantity.symbol == memo_struct.src.symbol, "src token symbol must match memo.");
+    symbol dest_symbol;
+    auto memo_struct = parse_memo(memo, dest_symbol);
 
     reservespert_type reservespert_table_inst(_self, _self.value);
-    auto itr = (quantity.symbol != EOS_SYMBOL) ?
-            reservespert_table_inst.find(quantity.symbol.raw()) :
-            reservespert_table_inst.find(memo_struct.dest.symbol.raw());
-    eosio_assert( itr != reservespert_table_inst.end(), "unlisted token" );
+    state_type state_instance(_self, _self.value);
+    auto current_state = state_instance.get();
 
-    /* fill memo struct with amount to avoid passing the transfer object afterwards. */
-    memo_struct.src.amount = quantity.amount;
+    bool buy = (quantity.symbol == EOS_SYMBOL);
+    auto token_symbol = buy ? dest_symbol: quantity.symbol;
+
+    eosio_assert(reservespert_table_inst.find(token_symbol.raw()) !=
+                 reservespert_table_inst.end(),
+                 "unlisted token");
+    auto token_entry = reservespert_table_inst.get(token_symbol.raw());
+
+    memo_struct.trader = from;
+    memo_struct.src = quantity;
+    memo_struct.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
+    memo_struct.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
+    memo_struct.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
+
+    eosio_assert(_code == memo_struct.src_contract, "src token contract must match memo.");
 
     /* get rates from all reserves that hold the pair */
     auto reservespert_entry = (memo_struct.src.symbol != EOS_SYMBOL) ?
@@ -280,19 +290,13 @@ int Network::find_reserve(vector<name> reserve_list,
     return NOT_FOUND;
 }
 
-memo_trade_structure Network::parse_memo(string memo) {
+memo_trade_structure Network::parse_memo(string memo, symbol &dest_symbol) {
     auto res = memo_trade_structure();
     auto parts = split(memo, ",");
-    res.trader = name(parts[0].c_str());
-    res.src_contract = name(parts[1].c_str());
-
     auto sym_parts = split(parts[2], " ");
-    res.src = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
-
-    res.dest_contract = name(parts[3].c_str());
     sym_parts = split(parts[4], " ");
-    res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
 
+    dest_symbol = symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str()));
     res.dest_account = name(parts[5].c_str());
     res.max_dest_amount = stoi(parts[6].c_str()); /* TODO: should we use std:stoul to turn to unsignd ints? */
     res.min_conversion_rate = stof(parts[7].c_str()); /* TODO: is it ok to use stdof to parse double? */

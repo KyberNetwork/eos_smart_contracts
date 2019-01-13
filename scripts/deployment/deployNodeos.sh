@@ -92,7 +92,7 @@ cleos get table reserve1 reserve1 rate
 #deploy network
 cleos set account permission network active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"network\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p network
 cleos set contract network contracts/Network Network.wasm -p network@active
-cleos push action network init '[ "netowner", true ]' -p network@active
+cleos push action network init '[ "netowner", "eosio.token", true ]' -p network@active
 
 # add reserves
 cleos push action network addreserve '[ "reserve", true ]' -p netowner@active

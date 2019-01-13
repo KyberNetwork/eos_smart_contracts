@@ -30,8 +30,9 @@ CONTRACT Network : public contract {
 
         TABLE state_t {
             name        owner;
+            name        eos_contract;
             bool        is_enabled;
-            EOSLIB_SERIALIZE(state_t, (owner)(is_enabled))
+            EOSLIB_SERIALIZE(state_t, (owner)(eos_contract)(is_enabled))
         };
 
         TABLE reserve_t {
@@ -55,7 +56,7 @@ CONTRACT Network : public contract {
         typedef eosio::multi_index<"reserve"_n, reserve_t> reserves_type;
         typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
 
-        ACTION init(name owner, bool enable);
+        ACTION init(name owner, name eos_contract, bool enable);
 
         ACTION setenable(bool enable);
 
@@ -96,5 +97,5 @@ CONTRACT Network : public contract {
                          uint8_t num_reserves,
                          name reserve);
 
-        memo_trade_structure parse_memo(string memo);
+        memo_trade_structure parse_memo(string memo, symbol &dest_symbol);
 };
