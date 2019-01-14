@@ -10,7 +10,7 @@ using namespace eosio;
 #define MAX_RESERVES_PER_TOKEN  5
 #define NOT_FOUND              -1
 
-struct memo_trade_structure {
+struct trade_info_struct {
     name        trader;
     name        src_contract;
     asset       src;
@@ -59,19 +59,19 @@ CONTRACT Network : public contract {
         ACTION addreserve(name reserve, bool add);
 
         ACTION listpairres(name reserve,
-                           asset token,
+                           symbol token_symbol,
                            name token_contract,
                            bool add);
 
-        ACTION trade1(memo_trade_structure memo_struct);
+        ACTION trade1(trade_info_struct trade_info);
 
         ACTION trade2(name reserve,
-                      memo_trade_structure memo_struct,
+                      trade_info_struct trade_info,
                       asset actual_src,
                       asset actual_dest);
 
         ACTION trade3(name reserve,
-                      memo_trade_structure memo_struct,
+                      trade_info_struct trade_info,
                       asset actual_src,
                       asset actual_dest,
                       asset dest_before_trade);
@@ -81,9 +81,9 @@ CONTRACT Network : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        void trade0(name from, name to, asset quantity, string memo);
+        void trade0(name from, name to, asset quantity, string memo, state_t &current_state);
 
-        void calc_actuals(memo_trade_structure &memo_struct,
+        void calc_actuals(trade_info_struct &trade_info,
                           double rate_result,
                           uint64_t rate_result_dest_amount,
                           asset &actual_src,
@@ -93,5 +93,5 @@ CONTRACT Network : public contract {
                          uint8_t num_reserves,
                          name reserve);
 
-        memo_trade_structure parse_memo(string memo, symbol &dest_symbol);
+        trade_info_struct parse_memo(string memo, symbol &dest_symbol);
 };

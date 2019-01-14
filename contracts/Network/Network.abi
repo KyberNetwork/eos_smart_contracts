@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Jan 14 11:18:58 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Jan 14 12:16:29 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -43,8 +43,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "token",
-                    "type": "asset"
+                    "name": "token_symbol",
+                    "type": "symbol"
                 },
                 {
                     "name": "token_contract",
@@ -53,40 +53,6 @@
                 {
                     "name": "add",
                     "type": "bool"
-                }
-            ]
-        },
-        {
-            "name": "memo_trade_structure",
-            "base": "",
-            "fields": [
-                {
-                    "name": "trader",
-                    "type": "name"
-                },
-                {
-                    "name": "src_contract",
-                    "type": "name"
-                },
-                {
-                    "name": "src",
-                    "type": "asset"
-                },
-                {
-                    "name": "dest_contract",
-                    "type": "name"
-                },
-                {
-                    "name": "dest",
-                    "type": "asset"
-                },
-                {
-                    "name": "dest_account",
-                    "type": "name"
-                },
-                {
-                    "name": "min_conversion_rate",
-                    "type": "float64"
                 }
             ]
         },
@@ -155,8 +121,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 }
             ]
         },
@@ -169,8 +135,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 },
                 {
                     "name": "actual_src",
@@ -191,8 +157,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 },
                 {
                     "name": "actual_src",
@@ -205,6 +171,40 @@
                 {
                     "name": "dest_before_trade",
                     "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "trade_info_struct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "trader",
+                    "type": "name"
+                },
+                {
+                    "name": "src_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "src",
+                    "type": "asset"
+                },
+                {
+                    "name": "dest_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "dest",
+                    "type": "asset"
+                },
+                {
+                    "name": "dest_account",
+                    "type": "name"
+                },
+                {
+                    "name": "min_conversion_rate",
+                    "type": "float64"
                 }
             ]
         },

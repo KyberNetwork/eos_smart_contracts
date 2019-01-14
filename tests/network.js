@@ -134,7 +134,7 @@ before("setup accounts, contracts and initial funds", async () => {
     const networkAsOwner = await networkOwnerData.eos.contract(networkData.account);
     await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
     await networkAsOwner.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-    await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token:"0.0000 SYS", token_contract:tokenData.account},
+    await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},
                               {authorization: `${networkOwnerData.account}@active`});
 
     /*
