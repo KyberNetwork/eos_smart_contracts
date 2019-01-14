@@ -38,7 +38,6 @@ CONTRACT Network : public contract {
             EOSLIB_SERIALIZE(reserve_t, (contract))
         };
 
-        /* TODO: change to 2 lists of per_token_src and per_token_dest */
         TABLE reservespert_t {
             symbol          symbol;
             name            token_contract;
