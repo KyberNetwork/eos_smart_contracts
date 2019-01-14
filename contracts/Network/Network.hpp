@@ -17,10 +17,7 @@ struct memo_trade_structure {
     name        dest_contract;
     asset       dest;
     name        dest_account;
-    uint64_t    max_dest_amount;
     double      min_conversion_rate;
-    name        walletId;
-    string      hint; /* TODO: should hint be another type? */
 };
 
 CONTRACT Network : public contract {

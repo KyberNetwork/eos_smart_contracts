@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Dec 18 23:15:56 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sun Jan 13 15:31:19 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -22,6 +22,10 @@
             "fields": [
                 {
                     "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "eos_contract",
                     "type": "name"
                 },
                 {
@@ -81,20 +85,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "max_dest_amount",
-                    "type": "uint64"
-                },
-                {
                     "name": "min_conversion_rate",
                     "type": "float64"
-                },
-                {
-                    "name": "walletId",
-                    "type": "name"
-                },
-                {
-                    "name": "hint",
-                    "type": "string"
                 }
             ]
         },
@@ -146,6 +138,10 @@
             "fields": [
                 {
                     "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "eos_contract",
                     "type": "name"
                 },
                 {

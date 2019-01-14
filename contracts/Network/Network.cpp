@@ -260,6 +260,7 @@ void Network::calc_actuals(memo_trade_structure &memo_struct,
     uint64_t actual_dest_amount;
     uint64_t actual_src_amount;
 
+    /* removed since we do not support max_dest_amount input at this point:
     if (rate_result_dest_amount > memo_struct.max_dest_amount) {
         actual_dest_amount = memo_struct.max_dest_amount;
         actual_src_amount = calc_src_amount(rate_result,
@@ -269,9 +270,10 @@ void Network::calc_actuals(memo_trade_structure &memo_struct,
         eosio_assert(actual_src_amount <= memo_struct.src.amount,
                      "actual src amount can not be bigger than memo src amount");
     } else {
-        actual_dest_amount = rate_result_dest_amount;
-        actual_src_amount = memo_struct.src.amount;
-    }
+    */
+
+    actual_dest_amount = rate_result_dest_amount;
+    actual_src_amount = memo_struct.src.amount;
 
     actual_src.amount = actual_src_amount;
     actual_src.symbol = memo_struct.src.symbol;
@@ -293,16 +295,12 @@ int Network::find_reserve(vector<name> reserve_list,
 memo_trade_structure Network::parse_memo(string memo, symbol &dest_symbol) {
     auto res = memo_trade_structure();
     auto parts = split(memo, ",");
-    auto sym_parts = split(parts[2], " ");
-    sym_parts = split(parts[4], " ");
 
+    auto sym_parts = split(parts[0], " ");
     dest_symbol = symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str()));
-    res.dest_account = name(parts[5].c_str());
-    res.max_dest_amount = stoi(parts[6].c_str()); /* TODO: should we use std:stoul to turn to unsignd ints? */
-    res.min_conversion_rate = stof(parts[7].c_str()); /* TODO: is it ok to use stdof to parse double? */
-    res.walletId = name(parts[8].c_str());
-    res.hint = parts[7];
 
+    res.dest_account = name(parts[1].c_str());
+    res.min_conversion_rate = stof(parts[2].c_str()); /* TODO: is it ok to use stdof to parse double? */
     return res;
 }
 
