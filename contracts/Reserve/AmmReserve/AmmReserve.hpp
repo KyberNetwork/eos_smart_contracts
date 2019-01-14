@@ -14,12 +14,12 @@ CONTRACT AmmReserve : public contract {
         TABLE state_t {
             name        owner;
             name        network_contract;
-            asset       token;
+            symbol      token_symbol;
             name        token_contract;
             name        eos_contract;
             bool        trade_enabled;
             asset       collected_fees_in_tokens;
-            EOSLIB_SERIALIZE(state_t, (owner)(network_contract)(token)(token_contract)
+            EOSLIB_SERIALIZE(state_t, (owner)(network_contract)(token_symbol)(token_contract)
                                       (eos_contract)(trade_enabled)(collected_fees_in_tokens))
         };
 
@@ -53,7 +53,7 @@ CONTRACT AmmReserve : public contract {
 
         ACTION init(name    owner,
                     name    network_contract,
-                    asset   token,
+                    symbol  token_symbol,
                     name    token_contract,
                     name    eos_contract,
                     bool    enable_trade);

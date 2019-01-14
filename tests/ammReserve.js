@@ -65,7 +65,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await reserveAsReserve.init({
         owner: ownerData.account,
         network_contract: networkData.account,
-        token: "0.0000 SYS",
+        token_symbol: "4,SYS",
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
         enable_trade: 1,

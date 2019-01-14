@@ -63,8 +63,13 @@ before("setup accounts, contracts and initial funds", async () => {
     await tokenData.eos.transaction(tokenData.account, myaccount => {
         myaccount.create(tokenData.account, '1000000000.0000 SYS', {authorization: tokenData.account})
         myaccount.issue(reserve1Data.account, '100.0000 SYS', 'deposit', {authorization: tokenData.account})
-        myaccount.issue(reserve2Data.account, '100.0000 SYS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(aliceData.account, '100.0000 SYS', 'deposit', {authorization: tokenData.account})
+    })
+
+    await tokenData.eos.transaction(tokenData.account, myaccount => {
+        myaccount.create(tokenData.account, '1000000000.000 TOKA', {authorization: tokenData.account})
+        myaccount.issue(reserve2Data.account, '1000.000 TOKA', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(aliceData.account, '1000.000 TOKA', 'deposit', {authorization: tokenData.account})
     })
 
     await tokenData.eos.transaction(tokenData.account, myaccount => {
@@ -74,12 +79,14 @@ before("setup accounts, contracts and initial funds", async () => {
         myaccount.issue(aliceData.account, '100.0000 EOS', 'deposit', {authorization: tokenData.account})
     })
 
+
+
     /* init reserves, setparams */
     const reserve1 = await reserve1Data.eos.contract(reserve1Data.account);
     await reserve1.init({
         owner: reserve1OwnerData.account,
         network_contract: networkData.account,
-        token: "0.0000 SYS",
+        token_symbol: "4,SYS",
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
         enable_trade: 1,
@@ -89,7 +96,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await reserve2.init({
         owner: reserve2OwnerData.account,
         network_contract: networkData.account,
-        token: "0.0000 SYS",
+        token_symbol: "3,TOKA",
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
         enable_trade: 1,
@@ -135,16 +142,9 @@ before("setup accounts, contracts and initial funds", async () => {
     await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
     await networkAsOwner.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
     await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},
-                              {authorization: `${networkOwnerData.account}@active`});
-
-    /*
-    await network.listpairres({
-        reserve:reserve2Data.account,
-        token:"0.0000 SYS",
-        token_contract:tokenData.account,
-        add: 1
-        },{authorization: `${networkData.account}@active`});
-*/
+                                     {authorization: `${networkOwnerData.account}@active`});
+    await networkAsOwner.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},
+                                     {authorization: `${networkOwnerData.account}@active`});
 
 
 })
@@ -153,7 +153,7 @@ describe('As owner', () => {
 });
 
 describe('as non owner', () => {
-    it('buy dest amount < max dest amount', async function() {
+    it('buy token with precision 4', async function() {
         const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
 
         let calcRate = await networkServices.getRate({
@@ -182,7 +182,7 @@ describe('as non owner', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    it('sell while dest amount < max dest amount', async function() {
+    it('sell token with precision 4', async function() {
         const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
         let calcRate = await networkServices.getRate({
@@ -212,5 +212,39 @@ describe('as non owner', () => {
 
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
+    it('buy token with precision 3', async function() {
+        const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+
+        let calcRate = await networkServices.getRate({
+            eos:networkData.eos,
+            srcSymbol:"EOS",
+            destSymbol:"TOKA",
+            srcAmount:1.1134,
+            networkAccount:networkData.account,
+            eosTokenAccount:tokenData.account})
+        let calcDestAmount = srcAmount * calcRate;
+
+        await networkServices.trade({
+            eos:aliceData.eos,
+            networkAccount:networkData.account,
+            userAccount:aliceData.account, 
+            srcAmount:1.1134,
+            srcTokenAccount:tokenData.account,
+            srcSymbol:"EOS",
+            destPrecision:3,
+            destSymbol:"TOKA",
+            destAccount:mosheData.account,
+            minConversionRate:"0.000001"
+        })
+        return
+
+        const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+        const balanceChange = balanceAfter - balanceBefore
+        balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
+    })
+    xit('sell token with precision 3', async function() {})
+    xit('buy token with precision 2', async function() {})
+    xit('sell token with precision 2', async function() {})
+
 });
 
