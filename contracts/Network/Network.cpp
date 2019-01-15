@@ -165,6 +165,8 @@ ACTION Network::trade1(trade_info_struct trade_info) {
         }
     }
 
+    eosio_assert(best_rate_entry.stored_rate != 0,
+                 "got 0 rate.");
     eosio_assert(best_rate_entry.stored_rate >= trade_info.min_conversion_rate,
                  "rate smaller than min conversion rate.");
 
