@@ -65,7 +65,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await reserveAsReserve.init({
         owner: ownerData.account,
         network_contract: networkData.account,
-        token: "0.0000 SYS",
+        token_symbol: "4,SYS",
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
         enable_trade: 1,
@@ -88,7 +88,6 @@ before("setup accounts, contracts and initial funds", async () => {
 
 describe('As reserve owner', () => {
 
-    xit('init a reserve', async function() {});
     it('set network', async function() {
         const reserveAsOwner = await ownerData.eos.contract(reserveData.account);
         await reserveAsOwner.setnetwork({network_contract: networkData.account},{authorization: `${ownerData.account}@active`});
@@ -239,7 +238,16 @@ describe('As network', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    xit('buy with rate > max_buy_rate', async function() {});
+    it('buy with rate > max_buy_rate', async function() {
+        /* get rate from blockchain. */
+        const reserve = await networkData.eos.contract(reserveData.account);
+        await reserve.getconvrate({src: "4.7611 EOS"},{authorization: `${networkData.account}@active`});
+        let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
+
+        /* calc expected rate offline*/
+        let calcRate = await reserveServices.getRate({ srcSymbol:"EOS", destSymbol:"SYS", srcAmount: 4.7611, eos:reserveData.eos, reserveAccount:reserveData.account, eosTokenAccount:tokenData.account})
+        calcRate.should.be.closeTo(rate, RATE_PRECISON)
+    });
     xit('buy with rate < min_buy_rate', async function() {});
     xit('sell with rate > max_buy_rate', async function() {});
     xit('sell with rate < min_buy_rate', async function() {});

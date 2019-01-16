@@ -104,21 +104,14 @@ module.exports.trade = async function(options) {
     let networkAccount = options.networkAccount
     let userAccount = options.userAccount 
     let srcAmount = options.srcAmount
-    let srcPrecision = options.srcPrecision
     let srcTokenAccount = options.srcTokenAccount
     let srcSymbol = options.srcSymbol
     let destPrecision = options.destPrecision
     let destSymbol = options.destSymbol
-    let destTokenAccount = options.destTokenAccount
     let destAccount = options.destAccount
-    let maxDestAmount = options.maxDestAmount
     let minConversionRate = options.minConversionRate
-    let walletId = options.walletId
-    let hint = options.hint
 
-    let memo = `${userAccount},${srcTokenAccount},${srcPrecision} ${srcSymbol},` +
-               `${destTokenAccount},${destPrecision} ${destSymbol},${destAccount},` +
-               `${maxDestAmount},${minConversionRate},${walletId},${hint}`
+    let memo = `${destPrecision} ${destSymbol},${destAccount},${minConversionRate}`
     let asset = `${srcAmount} ${srcSymbol}`
 
     const token = await eos.contract(srcTokenAccount);

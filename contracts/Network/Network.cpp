@@ -1,7 +1,7 @@
 #include "./Network.hpp"
 #include <math.h>
 
-ACTION Network::init(name owner, bool enable) {
+ACTION Network::init(name owner, name eos_contract, bool enable) {
     require_auth(_self);
 
     state_type state_instance(_self, _self.value);
@@ -9,6 +9,7 @@ ACTION Network::init(name owner, bool enable) {
 
     state_t new_state;
     new_state.owner = owner;
+    new_state.eos_contract = eos_contract;
     new_state.is_enabled = enable;
     state_instance.set(new_state, _self);
 }
@@ -43,7 +44,7 @@ ACTION Network::addreserve(name reserve, bool add) {
 }
 
 ACTION Network::listpairres(name reserve,
-                            asset token,
+                            symbol token_symbol,
                             name token_contract,
                             bool add
 ) {
@@ -56,13 +57,13 @@ ACTION Network::listpairres(name reserve,
     eosio_assert(reserve_exists, "reserve does not exist");
 
     reservespert_type reservespert_table_inst(_self, _self.value);
-    auto itr = reservespert_table_inst.find(token.symbol.raw());
+    auto itr = reservespert_table_inst.find(token_symbol.raw());
     auto token_exists = (itr != reservespert_table_inst.end());
 
     if (add) {
         if (!token_exists) {
             reservespert_table_inst.emplace(_self, [&]( auto& s ) {
-               s.symbol = token.symbol;
+               s.symbol = token_symbol;
                s.token_contract = token_contract;
                s.reserve_contracts = vector<name>(MAX_RESERVES_PER_TOKEN, name());
                s.reserve_contracts[0] = reserve;
@@ -80,7 +81,7 @@ ACTION Network::listpairres(name reserve,
             });
         }
     } else if (token_exists) {
-        bool erase = false;
+        bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
             int reserve_index = find_reserve(s.reserve_contracts, s.num_reserves, reserve);
             if(reserve_index != -1) {
@@ -90,10 +91,10 @@ ACTION Network::listpairres(name reserve,
                 s.num_reserves--;
             }
             if(s.num_reserves == 0) {
-                erase = true;
+                last_reserve_for_token = true;
             }
         });
-        if (erase) {
+        if (last_reserve_for_token) {
             reservespert_table_inst.erase(itr);
         }
     }
@@ -107,101 +108,98 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
     send(_self, to, quantity, dest_contract);
 }
 
-void Network::trade0(name from, name to, asset quantity, string memo) {
+void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
 
-    auto memo_struct = parse_memo(memo);
+    symbol dest_symbol;
+    auto trade_info = parse_memo(memo, dest_symbol);
 
-    eosio_assert(_code == memo_struct.src_contract, "src token contract must match memo.");
-    eosio_assert(quantity.symbol == memo_struct.src.symbol, "src token symbol must match memo.");
+    eosio_assert(quantity.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
+    eosio_assert(quantity.symbol != dest_symbol, "src symbol can not equal dest symbol");
+
+    bool buy = (quantity.symbol == EOS_SYMBOL);
+    auto token_symbol = buy ? dest_symbol: quantity.symbol;
 
     reservespert_type reservespert_table_inst(_self, _self.value);
-    auto itr = (quantity.symbol != EOS_SYMBOL) ?
-            reservespert_table_inst.find(quantity.symbol.raw()) :
-            reservespert_table_inst.find(memo_struct.dest.symbol.raw());
-    eosio_assert( itr != reservespert_table_inst.end(), "unlisted token" );
+    eosio_assert(reservespert_table_inst.find(token_symbol.raw()) !=
+                 reservespert_table_inst.end(),
+                 "unlisted token");
+    auto token_entry = reservespert_table_inst.get(token_symbol.raw());
 
-    /* fill memo struct with amount to avoid passing the transfer object afterwards. */
-    memo_struct.src.amount = quantity.amount;
+    trade_info.trader = from;
+    trade_info.src = quantity;
+    trade_info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
+    trade_info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
+    trade_info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
+
+    eosio_assert(_code == trade_info.src_contract, "_code does not match registered eos/token contract.");
 
     /* get rates from all reserves that hold the pair */
-    auto reservespert_entry = (memo_struct.src.symbol != EOS_SYMBOL) ?
-            reservespert_table_inst.get(memo_struct.src.symbol.raw()) :
-            reservespert_table_inst.get(memo_struct.dest.symbol.raw());
-
-    for (int i = 0; i < reservespert_entry.num_reserves; i++) {
-        auto reserve = reservespert_entry.reserve_contracts[i];
-        action {
-            permission_level{_self, "active"_n},
-            reserve,
-            "getconvrate"_n,
-            make_tuple(memo_struct.src)
-        }.send();
+    for (int i = 0; i < token_entry.num_reserves; i++) {
+        auto reserve = token_entry.reserve_contracts[i];
+        action {permission_level{_self, "active"_n}, reserve, "getconvrate"_n, make_tuple(trade_info.src)}.send();
     }
 
-    SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {memo_struct});
+    SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {trade_info});
 }
 
-ACTION Network::trade1(memo_trade_structure memo_struct) {
+ACTION Network::trade1(trade_info_struct trade_info) {
     eosio_assert( _code == _self, "current action can only be called internally" );
 
-    /* read stored rates from all reserves that hold the pair */
+    /* read stored rates from all reserves that hold the pair and decide on the best one*/
     reservespert_type reservespert_table_inst(_self, _self.value);
-    auto reservespert_entry = (memo_struct.src.symbol != EOS_SYMBOL) ?
-            reservespert_table_inst.get(memo_struct.src.symbol.raw()) :
-            reservespert_table_inst.get(memo_struct.dest.symbol.raw());
+    symbol token_symbol = (trade_info.src.symbol == EOS_SYMBOL) ? trade_info.dest.symbol : trade_info.src.symbol;
+    auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
 
     double best_rate = 0;
-    int best_reserve_index = 0;
+    name best_reserve = name();
+    struct rate_t best_rate_entry = {0};
     for (int i = 0; i < reservespert_entry.num_reserves; i++) {
         auto reserve = reservespert_entry.reserve_contracts[i];
         auto rate_entry = rate_type(reserve, reserve.value).get();
 
         if(rate_entry.stored_rate > best_rate) {
-            best_reserve_index = i;
+            best_reserve = reservespert_entry.reserve_contracts[i];
+            best_rate_entry = rate_entry;
         }
     }
-    auto best_reserve = reservespert_entry.reserve_contracts[best_reserve_index];
-    auto best_rate_entry = rate_type(best_reserve, best_reserve.value).get();
-    auto stored_rate = best_rate_entry.stored_rate;
-    auto rate_result_dest_amount = best_rate_entry.dest_amount;
 
-    eosio_assert(stored_rate >= memo_struct.min_conversion_rate,
-                 "recieved rate is smaller than min conversion rate.");
+    eosio_assert(best_rate_entry.stored_rate != 0,
+                 "got 0 rate.");
+    eosio_assert(best_rate_entry.stored_rate >= trade_info.min_conversion_rate,
+                 "rate smaller than min conversion rate.");
 
-    asset actual_src;
-    asset actual_dest;
-
-    calc_actuals(memo_struct,
-                 stored_rate,
-                 rate_result_dest_amount,
+    asset actual_src, actual_dest;
+    calc_actuals(trade_info,
+                 best_rate_entry.stored_rate,
+                 best_rate_entry.dest_amount,
                  actual_src,
                  actual_dest);
 
-    if(actual_src < memo_struct.src) {
+    if(actual_src < trade_info.src) {
         /* if there is "change" send back to trader */
-        auto change = memo_struct.src - actual_src;
-        send(_self, memo_struct.trader, change, memo_struct.src_contract);
+        auto change = trade_info.src - actual_src;
+        send(_self, trade_info.trader, change, trade_info.src_contract);
     }
 
     SEND_INLINE_ACTION(*this,
                        trade2,
                        {_self, "active"_n},
-                       {best_reserve, memo_struct, actual_src, actual_dest});
+                       {best_reserve, trade_info, actual_src, actual_dest});
 }
 
 ACTION Network::trade2(name reserve,
-                     memo_trade_structure memo_struct,
-                     asset actual_src,
-                     asset actual_dest) {
+                       trade_info_struct trade_info,
+                       asset actual_src,
+                       asset actual_dest) {
 
     eosio_assert( _code == _self, "current action can only be called internally" );
 
-    /* store dest balance to help verify later that dest amount was received. */
-    asset dest_before_trade = get_balance(memo_struct.dest_account,
-                                          memo_struct.dest_contract,
-                                          memo_struct.dest.symbol);
+    /* save dest balance to help verify later that dest amount was received. */
+    asset dest_before_trade = get_balance(trade_info.dest_account,
+                                          trade_info.dest_contract,
+                                          trade_info.dest.symbol);
 
     /* since no suitable method to turn double into string we do not pass
      * conversion rate to reserve. Instead we assume that it's already stored there. */
@@ -209,40 +207,40 @@ ACTION Network::trade2(name reserve,
     /* do reserve trade */
     action {
         permission_level{_self, "active"_n},
-        memo_struct.src_contract,
+        trade_info.src_contract,
         "transfer"_n,
         make_tuple(_self,
                    reserve,
                    actual_src,
-                   (name{memo_struct.dest_account}).to_string())
+                   (name{trade_info.dest_account}).to_string())
     }.send();
 
     SEND_INLINE_ACTION(
         *this,
         trade3,
         {_self, "active"_n},
-        {reserve, memo_struct, actual_src, actual_dest, dest_before_trade}
+        {reserve, trade_info, actual_src, actual_dest, dest_before_trade}
     );
 }
 
 ACTION Network::trade3(name reserve,
-                     memo_trade_structure memo_struct,
-                     asset actual_src,
-                     asset actual_dest,
-                     asset dest_before_trade) {
+                       trade_info_struct trade_info,
+                       asset actual_src,
+                       asset actual_dest,
+                       asset dest_before_trade) {
 
     eosio_assert( _code == _self, "current action can only be called internally" );
 
     /* verify dest balance was indeed added to dest account */
-    auto dest_after_trade = get_balance(memo_struct.dest_account,
-                                        memo_struct.dest_contract,
-                                        memo_struct.dest.symbol);
+    auto dest_after_trade = get_balance(trade_info.dest_account,
+                                        trade_info.dest_contract,
+                                        trade_info.dest.symbol);
     asset dest_difference = dest_after_trade - dest_before_trade;
 
     eosio_assert(dest_difference == actual_dest, "trade amount not added to dest");
-}
+} /* end of trade process */
 
-void Network::calc_actuals(memo_trade_structure &memo_struct,
+void Network::calc_actuals(trade_info_struct &trade_info,
                            double rate_result,
                            uint64_t rate_result_dest_amount,
                            asset &actual_src,
@@ -250,28 +248,18 @@ void Network::calc_actuals(memo_trade_structure &memo_struct,
     uint64_t actual_dest_amount;
     uint64_t actual_src_amount;
 
-    if (rate_result_dest_amount > memo_struct.max_dest_amount) {
-        actual_dest_amount = memo_struct.max_dest_amount;
-        actual_src_amount = calc_src_amount(rate_result,
-                                            memo_struct.src.symbol.precision(),
-                                            actual_dest_amount,
-                                            memo_struct.dest.symbol.precision());
-        eosio_assert(actual_src_amount <= memo_struct.src.amount,
-                     "actual src amount can not be bigger than memo src amount");
-    } else {
-        actual_dest_amount = rate_result_dest_amount;
-        actual_src_amount = memo_struct.src.amount;
-    }
+    /* removed additional logic related to max dest amount enforcing from here */
+
+    actual_dest_amount = rate_result_dest_amount;
+    actual_src_amount = trade_info.src.amount;
 
     actual_src.amount = actual_src_amount;
-    actual_src.symbol = memo_struct.src.symbol;
+    actual_src.symbol = trade_info.src.symbol;
     actual_dest.amount = actual_dest_amount;
-    actual_dest.symbol = memo_struct.dest.symbol;
+    actual_dest.symbol = trade_info.dest.symbol;
 }
 
-int Network::find_reserve(vector<name> reserve_list,
-                          uint8_t num_reserves,
-                          name reserve) {
+int Network::find_reserve(vector<name> reserve_list, uint8_t num_reserves, name reserve) {
     for(int index = 0; index < num_reserves; index++) {
         if (reserve_list[index] == reserve) {
             return index;
@@ -280,25 +268,15 @@ int Network::find_reserve(vector<name> reserve_list,
     return NOT_FOUND;
 }
 
-memo_trade_structure Network::parse_memo(string memo) {
-    auto res = memo_trade_structure();
+trade_info_struct Network::parse_memo(string memo, symbol &dest_symbol) {
+    auto res = trade_info_struct();
     auto parts = split(memo, ",");
-    res.trader = name(parts[0].c_str());
-    res.src_contract = name(parts[1].c_str());
 
-    auto sym_parts = split(parts[2], " ");
-    res.src = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
+    auto sym_parts = split(parts[0], " ");
+    dest_symbol = symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str()));
 
-    res.dest_contract = name(parts[3].c_str());
-    sym_parts = split(parts[4], " ");
-    res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
-
-    res.dest_account = name(parts[5].c_str());
-    res.max_dest_amount = stoi(parts[6].c_str()); /* TODO: should we use std:stoul to turn to unsignd ints? */
-    res.min_conversion_rate = stof(parts[7].c_str()); /* TODO: is it ok to use stdof to parse double? */
-    res.walletId = name(parts[8].c_str());
-    res.hint = parts[7];
-
+    res.dest_account = name(parts[1].c_str());
+    res.min_conversion_rate = stof(parts[2].c_str()); /* TODO: is it ok to use stdof to parse double? */
     return res;
 }
 
@@ -323,7 +301,7 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
             return;
         } else {
             /* this is a trade */
-            trade0(from, to, quantity, memo);
+            trade0(from, to, quantity, memo, current_state);
             return;
         }
     }

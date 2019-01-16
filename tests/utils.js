@@ -1,6 +1,7 @@
 const Eos = require('eosjs');
 const fs = require('fs');
 const path = require('path');
+const Math = require('math')
 
 async function ensureContractAssertionError(prom, expected_error) {
     try {
@@ -61,9 +62,15 @@ const renouncePermToOnlyCode = async function(eos, accountName) {
     })
 }
 
+function roundDown(number, decimals) {
+    decimals = decimals || 0;
+    return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+}
+
 module.exports ={
     ensureContractAssertionError,
     snooze,
     getUserBalance,
-    renouncePermToOnlyCode
+    renouncePermToOnlyCode,
+    roundDown
 }

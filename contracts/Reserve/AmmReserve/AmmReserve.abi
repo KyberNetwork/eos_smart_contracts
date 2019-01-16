@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Dec 18 22:09:23 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Jan 16 14:26:16 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -35,8 +35,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "token",
-                    "type": "asset"
+                    "name": "token_symbol",
+                    "type": "symbol"
                 },
                 {
                     "name": "token_contract",
@@ -170,8 +170,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "token",
-                    "type": "asset"
+                    "name": "token_symbol",
+                    "type": "symbol"
                 },
                 {
                     "name": "token_contract",

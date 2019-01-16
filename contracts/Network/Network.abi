@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Dec 18 23:15:56 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Wed Jan 16 14:26:22 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -25,6 +25,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "eos_contract",
+                    "type": "name"
+                },
+                {
                     "name": "enable",
                     "type": "bool"
                 }
@@ -39,8 +43,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "token",
-                    "type": "asset"
+                    "name": "token_symbol",
+                    "type": "symbol"
                 },
                 {
                     "name": "token_contract",
@@ -49,52 +53,6 @@
                 {
                     "name": "add",
                     "type": "bool"
-                }
-            ]
-        },
-        {
-            "name": "memo_trade_structure",
-            "base": "",
-            "fields": [
-                {
-                    "name": "trader",
-                    "type": "name"
-                },
-                {
-                    "name": "src_contract",
-                    "type": "name"
-                },
-                {
-                    "name": "src",
-                    "type": "asset"
-                },
-                {
-                    "name": "dest_contract",
-                    "type": "name"
-                },
-                {
-                    "name": "dest",
-                    "type": "asset"
-                },
-                {
-                    "name": "dest_account",
-                    "type": "name"
-                },
-                {
-                    "name": "max_dest_amount",
-                    "type": "uint64"
-                },
-                {
-                    "name": "min_conversion_rate",
-                    "type": "float64"
-                },
-                {
-                    "name": "walletId",
-                    "type": "name"
-                },
-                {
-                    "name": "hint",
-                    "type": "string"
                 }
             ]
         },
@@ -149,6 +107,10 @@
                     "type": "name"
                 },
                 {
+                    "name": "eos_contract",
+                    "type": "name"
+                },
+                {
                     "name": "is_enabled",
                     "type": "bool"
                 }
@@ -159,8 +121,8 @@
             "base": "",
             "fields": [
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 }
             ]
         },
@@ -173,8 +135,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 },
                 {
                     "name": "actual_src",
@@ -195,8 +157,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "memo_struct",
-                    "type": "memo_trade_structure"
+                    "name": "trade_info",
+                    "type": "trade_info_struct"
                 },
                 {
                     "name": "actual_src",
@@ -209,6 +171,40 @@
                 {
                     "name": "dest_before_trade",
                     "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "trade_info_struct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "trader",
+                    "type": "name"
+                },
+                {
+                    "name": "src_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "src",
+                    "type": "asset"
+                },
+                {
+                    "name": "dest_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "dest",
+                    "type": "asset"
+                },
+                {
+                    "name": "dest_account",
+                    "type": "name"
+                },
+                {
+                    "name": "min_conversion_rate",
+                    "type": "float64"
                 }
             ]
         },
