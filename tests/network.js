@@ -3,16 +3,9 @@ const Eos = require('eosjs')
 const BigNumber = require('bignumber.js');
 const path = require('path');
 const assert = require('chai').should();
-const Math = require('math')
 
-//TIDO - move to utils module
-function roundDown(number, decimals) {
-    decimals = decimals || 0;
-    return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
-}
-
-
-const { ensureContractAssertionError, snooze, getUserBalance, renouncePermToOnlyCode } = require('./utils');
+const {ensureContractAssertionError, snooze, getUserBalance,
+       renouncePermToOnlyCode, roundDown} = require('./utils');
 const networkServices = require('../scripts/services/networkServices')
 
 const AMOUNT_PRECISON = 0.0001
@@ -212,7 +205,7 @@ describe('as non owner', () => {
             srcAmount:2.0132,
             networkAccount:networkData.account,
             eosTokenAccount:tokenData.account})
-        let calcDestAmount = srcAmount * calcRate;
+        let calcDestAmount = roundDown(srcAmount * calcRate, 4);
 
         await networkServices.trade({
             eos:aliceData.eos,
@@ -241,7 +234,7 @@ describe('as non owner', () => {
             srcAmount:1.3678,
             networkAccount:networkData.account,
             eosTokenAccount:tokenData.account})
-        let calcDestAmount = srcAmount * calcRate;
+        let calcDestAmount = roundDown(srcAmount * calcRate, 4);
 
         await networkServices.trade({
             eos:aliceData.eos,
@@ -271,7 +264,7 @@ describe('as non owner', () => {
             srcAmount:1.1134,
             networkAccount:networkData.account,
             eosTokenAccount:tokenData.account})
-        let calcDestAmount = srcAmount * calcRate;
+        let calcDestAmount = roundDown(srcAmount * calcRate, 3);
 
         await networkServices.trade({
             eos:aliceData.eos,
@@ -301,7 +294,7 @@ describe('as non owner', () => {
             srcAmount:1.367,
             networkAccount:networkData.account,
             eosTokenAccount:tokenData.account})
-        let calcDestAmount = srcAmount * calcRate;
+        let calcDestAmount = roundDown(srcAmount * calcRate, 4);
 
         await networkServices.trade({
             eos:aliceData.eos,
@@ -332,8 +325,7 @@ describe('as non owner', () => {
             srcAmount:1.1103,
             networkAccount:networkData.account,
             eosTokenAccount:tokenData.account})
-        let calcDestAmount = srcAmount * calcRate;
-        calcDestAmount = roundDown(calcDestAmount,2) // TO - should we do the same in other cases?
+        let calcDestAmount = roundDown(srcAmount * calcRate,2);
 
         await networkServices.trade({
             eos:aliceData.eos,
@@ -352,7 +344,37 @@ describe('as non owner', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     })
-    xit('sell token with precision 2', async function() {})
+    it('sell token with precision 2', async function() {
+        const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+
+        let calcRate = await networkServices.getRate({
+            eos:networkData.eos,
+            srcSymbol:'TOKB',
+            destSymbol:'EOS',
+            srcAmount:2.31,
+            networkAccount:networkData.account,
+            eosTokenAccount:tokenData.account})
+        let calcDestAmount = roundDown(srcAmount * calcRate, 4);
+
+        await networkServices.trade({
+            eos:aliceData.eos,
+            networkAccount:networkData.account,
+            userAccount:aliceData.account, 
+            srcAmount:"2.31",
+            srcTokenAccount:tokenData.account,
+            srcSymbol:"TOKB",
+            destPrecision:4,
+            destSymbol:"EOS",
+            destAccount:mosheData.account,
+            minConversionRate:"0.000001"
+        })
+
+        const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+        const balanceChange = balanceAfter - balanceBefore
+
+        balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
+        
+    })
 
 });
 
