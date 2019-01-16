@@ -151,8 +151,9 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
 
     /* make sure reserve has enough of the dest token */
     asset this_balance = get_balance(_self,
-                                     current_state.token_contract,
-                                     current_state.token_symbol);
+                                     is_buy ? current_state.token_contract : current_state.eos_contract,
+                                     is_buy ? current_state.token_symbol : EOS_SYMBOL);
+
     if (this_balance.amount < dest_amount) return 0;
 
     return rate;
