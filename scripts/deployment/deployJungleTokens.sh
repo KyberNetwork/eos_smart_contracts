@@ -26,7 +26,6 @@ NTB_RESERVE_ACCOUNT="yolorese1142"
 NTC_RESERVE_ACCOUNT="yolorese1144"
 NTD_RESERVE_ACCOUNT="yolorese1145"
 
-
 # deploy another contract just to make it interesting
 ###$jleos system newaccount --stake-net "0.1 EOS" --stake-cpu "0.1 EOS" --buy-ram-kbytes 8 -x 1000 $ACCOUNT_NAME $ANOTHER_TOKEN_ACCOUNT $PUBLIC_KEY
 
@@ -147,13 +146,13 @@ $jleos push action $NTD_RESERVE_ACCOUNT setparams '[ "0.1", "0.02", "20.0000 EOS
 
 #add code premission (later only codepermission will be left as control will be resigned)
 $jleos set account permission $OTA_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTA_RESERVE_ACCOUNT@active
-$jleos set account permission $OTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTB_RESERVE_ACCOUNT@active
-$jleos set account permission $OTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTC_RESERVE_ACCOUNT@active
-$jleos set account permission $OTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTD_RESERVE_ACCOUNT@active
+$jleos set account permission $OTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTB_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTB_RESERVE_ACCOUNT@active
+$jleos set account permission $OTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTC_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTC_RESERVE_ACCOUNT@active
+$jleos set account permission $OTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTD_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $OTD_RESERVE_ACCOUNT@active
 $jleos set account permission $NTA_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$NTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTA_RESERVE_ACCOUNT@active
-$jleos set account permission $NTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTB_RESERVE_ACCOUNT@active
-$jleos set account permission $NTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTC_RESERVE_ACCOUNT@active
-$jleos set account permission $NTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTA_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTD_RESERVE_ACCOUNT@active
+$jleos set account permission $NTB_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTB_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTB_RESERVE_ACCOUNT@active
+$jleos set account permission $NTC_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTC_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTC_RESERVE_ACCOUNT@active
+$jleos set account permission $NTD_RESERVE_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$OTD_RESERVE_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p $NTD_RESERVE_ACCOUNT@active
 
 #add reserves to network
 $jleos push action $NETWORK_ACCOUNT addreserve "[ \"$OTA_RESERVE_ACCOUNT\", true ]" -p $NETWORK_OWNER_ACCOUNT@active
