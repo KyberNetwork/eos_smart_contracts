@@ -11,7 +11,7 @@ TOKEN_ACCOUNT="testtokeaaaa"
 RESERVE_ACCOUNT="yolorese1112"
 RESERVE_OWNER_ACCOUNT=lionofcourse
 #NETWORK_ACCOUNT="yolonetw1112"
-NETWORK_ACCOUNT="yolonetw1113"
+NETWORK_ACCOUNT="yolonetw1115"
 NETWORK_OWNER_ACCOUNT=lionofcourse
 MOSHE_ACCOUNT="testmoseaaaa"
 EOS_ACCOUNT="eosio.token"
@@ -47,6 +47,7 @@ $jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0000 SYS\",
 $jleos system buyram $ACCOUNT_NAME $NETWORK_ACCOUNT --kbytes 550
 
 $jleos set contract $NETWORK_ACCOUNT contracts/Network Network.wasm --abi Network.abi -p $NETWORK_ACCOUNT@active
+sleep 3
 $jleos push action $NETWORK_ACCOUNT init "[ \"$NETWORK_OWNER_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_ACCOUNT@active
 
 $jleos set account permission $NETWORK_ACCOUNT active "{\"threshold\": 1, \"keys\":[] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
