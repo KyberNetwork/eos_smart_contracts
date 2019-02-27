@@ -114,6 +114,7 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
 
     symbol dest_symbol;
     auto trade_info = parse_memo(memo, dest_symbol);
+    eosio_assert(trade_info.dest_account != _self); // block sending dst from reserve back to network
 
     eosio_assert(quantity.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
     eosio_assert(quantity.symbol != dest_symbol, "src symbol can not equal dest symbol");
@@ -127,13 +128,13 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
                  "unlisted token");
     auto token_entry = reservespert_table_inst.get(token_symbol.raw());
 
+    trade_info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
+    eosio_assert(_code == trade_info.src_contract, "_code does not match registered eos/token contract.");
+
     trade_info.trader = from;
     trade_info.src = quantity;
-    trade_info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
     trade_info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
     trade_info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
-
-    eosio_assert(_code == trade_info.src_contract, "_code does not match registered eos/token contract.");
 
     /* get rates from all reserves that hold the pair */
     for (int i = 0; i < token_entry.num_reserves; i++) {
@@ -145,9 +146,11 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
 }
 
 ACTION Network::trade1(trade_info_struct trade_info) {
-    eosio_assert( _code == _self, "current action can only be called internally" );
 
-    /* read stored rates from all reserves that hold the pair and decide on the best one*/
+    eosio_assert( _code == _self, "current action can only be called internally" );
+    require_auth(_self);
+
+    /* read stored rates from all reserves that hold the pair and decide on the best one */
     reservespert_type reservespert_table_inst(_self, _self.value);
     symbol token_symbol = (trade_info.src.symbol == EOS_SYMBOL) ? trade_info.dest.symbol : trade_info.src.symbol;
     auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
@@ -177,12 +180,6 @@ ACTION Network::trade1(trade_info_struct trade_info) {
                  actual_src,
                  actual_dest);
 
-    if(actual_src < trade_info.src) {
-        /* if there is "change" send back to trader */
-        auto change = trade_info.src - actual_src;
-        send(_self, trade_info.trader, change, trade_info.src_contract);
-    }
-
     SEND_INLINE_ACTION(*this,
                        trade2,
                        {_self, "active"_n},
@@ -195,6 +192,7 @@ ACTION Network::trade2(name reserve,
                        asset actual_dest) {
 
     eosio_assert( _code == _self, "current action can only be called internally" );
+    require_auth(_self);
 
     /* save dest balance to help verify later that dest amount was received. */
     asset dest_before_trade = get_balance(trade_info.dest_account,
@@ -230,6 +228,7 @@ ACTION Network::trade3(name reserve,
                        asset dest_before_trade) {
 
     eosio_assert( _code == _self, "current action can only be called internally" );
+    require_auth(_self);
 
     /* verify dest balance was indeed added to dest account */
     auto dest_after_trade = get_balance(trade_info.dest_account,
@@ -247,8 +246,6 @@ void Network::calc_actuals(trade_info_struct &trade_info,
                            asset &actual_dest) {
     uint64_t actual_dest_amount;
     uint64_t actual_src_amount;
-
-    /* removed additional logic related to max dest amount enforcing from here */
 
     actual_dest_amount = rate_result_dest_amount;
     actual_src_amount = trade_info.src.amount;
@@ -282,11 +279,9 @@ trade_info_struct Network::parse_memo(string memo, symbol &dest_symbol) {
 
 void Network::transfer(name from, name to, asset quantity, string memo) {
 
-    if (from == _self) {
-        /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
-         * after self renounces its authorities only owner can withdraw. */
-        return;
-    }
+    /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
+    * after self renounces its authorities only owner can withdraw. */
+    if (to != _self) return;
 
     state_type state_instance(_self, _self.value);
     if (to == _self) {
@@ -301,6 +296,7 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
             return;
         } else {
             /* this is a trade */
+            eosio_assert(current_state.is_enabled, "trade not enabled");
             trade0(from, to, quantity, memo, current_state);
             return;
         }
@@ -312,6 +308,8 @@ extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
 
         if (action == "transfer"_n.value && code != receiver) {
+            // a transfer action notified us (either sent to us or from us)
+            // code != receiver means no one called transfer directly on this contract but on a token contract instead
             eosio::execute_action( eosio::name(receiver), eosio::name(code), &Network::transfer );
         }
         if (code == receiver){

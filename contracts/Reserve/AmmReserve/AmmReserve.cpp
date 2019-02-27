@@ -350,11 +350,9 @@ void AmmReserve::record_fees(const struct params_t &current_params,
 
 void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
 
-    if (from == _self) {
-        /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
-         * after self renounces its authorities only owner can withdraw. */
-        return;
-    }
+    /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
+    * after self renounces its authorities only owner can withdraw. */
+    if (to != _self) return;
 
     state_type state_instance(_self, _self.value);
     if (to == _self) {
