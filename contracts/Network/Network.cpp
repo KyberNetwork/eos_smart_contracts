@@ -2,44 +2,62 @@
 #include <math.h>
 
 ACTION Network::init(name owner, name eos_contract, bool enable) {
+    eosio_assert(is_account(owner), "owner account does not exist");
+    eosio_assert(is_account(eos_contract), "eos contract account does not exist")
+
     require_auth(_self);
 
-    state_type state_instance(_self, _self.value);
-    eosio_assert(!state_instance.exists(), "init already called");
+    state_type state_inst(_self, _self.value);
+    eosio_assert(!state_inst.exists(), "init already called");
 
     state_t new_state;
     new_state.owner = owner;
     new_state.eos_contract = eos_contract;
     new_state.is_enabled = enable;
-    state_instance.set(new_state, _self);
+    state_inst.set(new_state, _self);
+}
+
+ACTION Network::setowner(name new_owner) {
+    eosio_assert(is_account(new_owner), "new owner account does not exist");
+
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+
+    auto s = state_inst.get();
+    require_auth(s.owner);
+
+    s.owner = new_owner;
+    state_inst.set(s, _self);
 }
 
 ACTION Network::setenable(bool enable) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
 
-    auto s = state_instance.get();
+    auto s = state_inst.get();
     require_auth(s.owner);
 
     s.is_enabled = enable;
-    state_instance.set(s, _self);
+    state_inst.set(s, _self);
 }
 
 ACTION Network::addreserve(name reserve, bool add) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-    require_auth(state_instance.get().owner);
+    eosio_assert(is_account(reserve), "reserve account does not exist");
 
-    reserves_type reserves_table_inst(_self, _self.value);
-    auto itr = reserves_table_inst.find(reserve.value);
-    bool exists = (itr != reserves_table_inst.end());
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().owner);
+
+    reserves_type reserves_inst(_self, _self.value);
+    auto itr = reserves_inst.find(reserve.value);
+    bool exists = (itr != reserves_inst.end());
     eosio_assert(add != exists, "can only add a non existing reserve or delete an existing one");
     if (add) {
-        reserves_table_inst.emplace(_self, [&]( auto& s ) {
+        reserves_inst.emplace(_self, [&]( auto& s ) {
             s.contract = reserve;
         });
     } else {
-        reserves_table_inst.erase(itr);
+        reserves_inst.erase(itr);
     }
 }
 
@@ -48,13 +66,14 @@ ACTION Network::listpairres(name reserve,
                             name token_contract,
                             bool add
 ) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-    require_auth(state_instance.get().owner);
+    eosio_assert(is_account(token_contract), "token contract account does not exist");
 
-    reserves_type reserves_table_inst(_self, _self.value);
-    auto reserve_exists = (reserves_table_inst.find(reserve.value) != reserves_table_inst.end());
-    eosio_assert(reserve_exists, "reserve does not exist");
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().owner);
+
+    reserves_type reserves_inst(_self, _self.value);
+    eosio_assert(reserves_inst.find(reserve.value) != reserves_inst.end(), "invalid reserve");
 
     reservespert_type reservespert_table_inst(_self, _self.value);
     auto itr = reservespert_table_inst.find(token_symbol.raw());
@@ -71,7 +90,7 @@ ACTION Network::listpairres(name reserve,
             });
         } else {
             reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
-                if(find_reserve(s.reserve_contracts, s.num_reserves, reserve) == -1) {
+                if(find_reserve(s.reserve_contracts, s.num_reserves, reserve) == NOT_FOUND) {
                     /* reserve does not exist */
                     eosio_assert(s.num_reserves < MAX_RESERVES_PER_TOKEN,
                                  "reached number of reserves limit for this token ");
@@ -84,7 +103,7 @@ ACTION Network::listpairres(name reserve,
         bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
             int reserve_index = find_reserve(s.reserve_contracts, s.num_reserves, reserve);
-            if(reserve_index != -1) {
+            if(reserve_index != NOT_FOUND) {
                 /* reserve exist */
                 s.reserve_contracts[reserve_index] = s.reserve_contracts[s.num_reserves-1];
                 s.reserve_contracts[s.num_reserves-1] = name();
@@ -101,9 +120,10 @@ ACTION Network::listpairres(name reserve,
 }
 
 ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-    require_auth(state_instance.get().owner);
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().owner);
+    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
 
     send(_self, to, quantity, dest_contract);
 }
@@ -111,7 +131,7 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
 void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
-    eosio_assert(quantity.amount != 0, "zero quantity is disallowed in transfer");
+    eosio_assert(quantity.amount > 0, "quantity must be positive in transfer");
 
     symbol dest_symbol;
     auto trade_info = parse_memo(memo, dest_symbol);
@@ -124,10 +144,7 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
     auto token_symbol = buy ? dest_symbol: quantity.symbol;
 
     reservespert_type reservespert_table_inst(_self, _self.value);
-    eosio_assert(reservespert_table_inst.find(token_symbol.raw()) !=
-                 reservespert_table_inst.end(),
-                 "unlisted token");
-    auto token_entry = reservespert_table_inst.get(token_symbol.raw());
+    auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
 
     trade_info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
     eosio_assert(_code == trade_info.src_contract, "_code does not match registered eos/token contract.");
@@ -270,13 +287,13 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
     * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
 
-    state_type state_instance(_self, _self.value);
-    if (!state_instance.exists()) {
+    state_type state_inst(_self, _self.value);
+    if (!state_inst.exists()) {
         /* if init not called yet don't trade, instead allow anyone to deposit. */
         return;
     }
 
-    auto current_state = state_instance.get();
+    auto current_state = state_inst.get();
     if (from == current_state.owner) {
         /* owner can deposit funds, but not trade */
         return;
@@ -295,10 +312,10 @@ extern "C" {
         if (action == "transfer"_n.value && code != receiver) {
             eosio::execute_action( eosio::name(receiver), eosio::name(code), &Network::transfer );
         }
-        if (code == receiver){
+        else if (code == receiver){
             switch( action ) {
-                EOSIO_DISPATCH_HELPER( Network, (init)(setenable)(addreserve)(listpairres)(withdraw)
-                                                (trade1)(trade2))
+                EOSIO_DISPATCH_HELPER( Network, (init)(setowner)(setenable)(addreserve)(listpairres)
+                                                (withdraw)(trade1)(trade2))
             }
         }
         eosio_exit(0);

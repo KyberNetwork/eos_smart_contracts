@@ -355,23 +355,22 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
     if (to != _self) return;
 
     state_type state_instance(_self, _self.value);
-    if (to == _self) {
-        if (!state_instance.exists()) {
-            /* if init not called yet allow anyone to deposit. */
-            return;
-        }
-
-        auto current_state = state_instance.get();
-        if (from == current_state.owner) {
-            /* owner can (only) deposit funds */
-            return;
-        } else {
-            /* only network can perform a trade */
-            eosio_assert(from == current_state.network_contract, "not coming from network contract");
-            reserve_trade(from, quantity, memo, _code, current_state);
-            return;
-        }
+    if (!state_instance.exists()) {
+        /* if init not called yet allow anyone to deposit. */
+        return;
     }
+
+    auto current_state = state_instance.get();
+    if (from == current_state.owner) {
+        /* owner can (only) deposit funds */
+        return;
+    } else {
+        /* only network can perform a trade */
+        eosio_assert(from == current_state.network_contract, "not coming from network contract");
+        reserve_trade(from, quantity, memo, _code, current_state);
+        return;
+    }
+
     eosio_assert(false, "unreachable code");
 }
 
@@ -380,7 +379,7 @@ extern "C" {
         if (action == "transfer"_n.value && code != receiver) {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &AmmReserve::transfer);
         }
-        if (code == receiver) {
+        else if (code == receiver) {
             switch (action) {
                 EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setnetwork)(enabletrade)
                                                   (disabletrade)(resetfee)(getconvrate)(withdraw))

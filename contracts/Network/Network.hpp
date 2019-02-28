@@ -29,13 +29,11 @@ CONTRACT Network : public contract {
             name        owner;
             name        eos_contract;
             bool        is_enabled;
-            EOSLIB_SERIALIZE(state_t, (owner)(eos_contract)(is_enabled))
         };
 
         TABLE reserve_t {
             name        contract;
             uint64_t    primary_key() const { return contract.value; }
-            EOSLIB_SERIALIZE(reserve_t, (contract))
         };
 
         TABLE reservespert_t {
@@ -44,7 +42,6 @@ CONTRACT Network : public contract {
             vector<name>    reserve_contracts;
             uint8_t         num_reserves;
             uint64_t        primary_key() const { return symbol.raw(); }
-            EOSLIB_SERIALIZE(reservespert_t, (symbol)(token_contract)(reserve_contracts)(num_reserves))
         };
 
         typedef eosio::singleton<"state"_n, state_t> state_type;
@@ -53,6 +50,8 @@ CONTRACT Network : public contract {
         typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
 
         ACTION init(name owner, name eos_contract, bool enable);
+
+        ACTION setowner(name new_owner);
 
         ACTION setenable(bool enable);
 

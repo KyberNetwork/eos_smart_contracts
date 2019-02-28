@@ -19,8 +19,6 @@ CONTRACT AmmReserve : public contract {
             name        eos_contract;
             bool        trade_enabled;
             asset       collected_fees_in_tokens;
-            EOSLIB_SERIALIZE(state_t, (owner)(network_contract)(token_symbol)(token_contract)
-                                      (eos_contract)(trade_enabled)(collected_fees_in_tokens))
         };
 
         TABLE params_t {
@@ -33,15 +31,12 @@ CONTRACT AmmReserve : public contract {
             double      min_buy_rate;
             double      max_sell_rate;
             double      min_sell_rate;
-            EOSLIB_SERIALIZE(params_t, (r)(p_min)(max_eos_cap_buy)(max_eos_cap_sell)(fee_percent)
-                                       (max_buy_rate)(min_buy_rate)(max_sell_rate)(min_sell_rate))
         };
 
         /* TODO: the following is duplicated with common.hpp, see if can remove from here. */
         TABLE rate_t {
             double      stored_rate; /* TODO - adding hash/id to make sure we read correct rate? */
             uint64_t    dest_amount; /* TODO: make it an asset to comply with standard that amounts are assets, rates are double? */
-            EOSLIB_SERIALIZE(rate_t, (stored_rate)(dest_amount))
         };
 
         typedef eosio::singleton<"state"_n, state_t> state_type;
