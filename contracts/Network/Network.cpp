@@ -111,6 +111,7 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
 void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
+    eosio_assert(quantity.amount != 0, "zero quantity is disallowed in transfer");
 
     symbol dest_symbol;
     auto trade_info = parse_memo(memo, dest_symbol);
@@ -270,22 +271,20 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
     if (to != _self) return;
 
     state_type state_instance(_self, _self.value);
-    if (to == _self) {
-        if (!state_instance.exists()) {
-            /* if init not called yet allow anyone to deposit. */
-            return;
-        }
+    if (!state_instance.exists()) {
+        /* if init not called yet don't trade, instead allow anyone to deposit. */
+        return;
+    }
 
-        auto current_state = state_instance.get();
-        if (from == current_state.owner) {
-            /* owner can (only) deposit funds */
-            return;
-        } else {
-            /* this is a trade */
-            eosio_assert(current_state.is_enabled, "trade not enabled");
-            trade0(from, to, quantity, memo, current_state);
-            return;
-        }
+    auto current_state = state_instance.get();
+    if (from == current_state.owner) {
+        /* owner can deposit funds, but not trade */
+        return;
+    } else {
+        /* this is a trade */
+        eosio_assert(current_state.is_enabled, "trade not enabled");
+        trade0(from, to, quantity, memo, current_state);
+        return;
     }
     eosio_assert(false, "unreachable code");
 }
@@ -294,8 +293,6 @@ extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
 
         if (action == "transfer"_n.value && code != receiver) {
-            // a transfer action notified us (either sent to us or from us)
-            // code != receiver means no one called transfer directly on this contract but on a token contract instead
             eosio::execute_action( eosio::name(receiver), eosio::name(code), &Network::transfer );
         }
         if (code == receiver){
