@@ -29,6 +29,7 @@ CONTRACT Network : public contract {
             name        owner;
             name        eos_contract;
             bool        is_enabled;
+            bool        entered;
         };
 
         TABLE reserve_t {
@@ -82,6 +83,8 @@ CONTRACT Network : public contract {
                           uint64_t rate_result_dest_amount,
                           asset &actual_src,
                           asset &actual_dest);
+
+        void test_and_set_entered(bool is_function_start);
 
         int find_reserve(vector<name> reserve_list,
                          uint8_t num_reserves,

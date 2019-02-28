@@ -3,7 +3,7 @@
 
 ACTION Network::init(name owner, name eos_contract, bool enable) {
     eosio_assert(is_account(owner), "owner account does not exist");
-    eosio_assert(is_account(eos_contract), "eos contract account does not exist")
+    eosio_assert(is_account(eos_contract), "eos contract account does not exist");
 
     require_auth(_self);
 
@@ -129,6 +129,8 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
 }
 
 void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
+    test_and_set_entered(true);
+
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
     eosio_assert(quantity.amount > 0, "quantity must be positive in transfer");
@@ -191,12 +193,15 @@ ACTION Network::trade1(trade_info_struct trade_info) {
     eosio_assert(best_rate_entry.stored_rate >= trade_info.min_conversion_rate,
                  "rate smaller than min conversion rate.");
 
-    asset actual_src, actual_dest;
-    calc_actuals(trade_info,
-                 best_rate_entry.stored_rate,
-                 best_rate_entry.dest_amount,
-                 actual_src,
-                 actual_dest);
+    asset actual_src = trade_info.src;
+
+    uint64_t actual_dest_amount = calc_dest_amount(best_rate_entry.stored_rate,
+                                                   trade_info.src.symbol.precision(),
+                                                   trade_info.src.amount,
+                                                   trade_info.dest.symbol.precision());
+    asset actual_dest = asset(actual_dest_amount, trade_info.dest.symbol);
+    eosio_assert(actual_dest_amount == best_rate_entry.dest_amount,
+                 "dest amount in reserve does not match src amount and rate");
 
     /* save dest balance to help verify later that dest amount was received. */
     asset dest_before_trade = get_balance(trade_info.dest_account,
@@ -241,6 +246,7 @@ ACTION Network::trade2(name reserve,
     asset dest_difference = dest_after_trade - dest_before_trade;
 
     eosio_assert(dest_difference == actual_dest, "trade amount not added to dest");
+    test_and_set_entered(false);
 } /* end of trade process */
 
 void Network::calc_actuals(trade_info_struct &trade_info,
@@ -267,6 +273,14 @@ int Network::find_reserve(vector<name> reserve_list, uint8_t num_reserves, name 
         }
     }
     return NOT_FOUND;
+}
+
+void Network::test_and_set_entered(bool is_function_start){
+    state_type state_inst(_self, _self.value);
+    auto s = state_inst.get();
+    eosio_assert(s.entered != is_function_start, "recursively entering during a trade");
+    s.entered = is_function_start;
+    state_inst.set(s, _self);
 }
 
 trade_info_struct Network::parse_memo(string memo, symbol &dest_symbol) {
