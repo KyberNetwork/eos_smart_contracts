@@ -68,11 +68,6 @@ CONTRACT Network : public contract {
         ACTION trade2(name reserve,
                       trade_info_struct trade_info,
                       asset actual_src,
-                      asset actual_dest);
-
-        ACTION trade3(name reserve,
-                      trade_info_struct trade_info,
-                      asset actual_src,
                       asset actual_dest,
                       asset dest_before_trade);
 

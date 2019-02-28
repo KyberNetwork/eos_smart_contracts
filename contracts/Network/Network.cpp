@@ -114,7 +114,7 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
 
     symbol dest_symbol;
     auto trade_info = parse_memo(memo, dest_symbol);
-    eosio_assert(trade_info.dest_account != _self); // block sending dst from reserve back to network
+    eosio_assert(trade_info.dest_account != _self, "dest account can not be network contract");
 
     eosio_assert(quantity.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
     eosio_assert(quantity.symbol != dest_symbol, "src symbol can not equal dest symbol");
@@ -180,20 +180,6 @@ ACTION Network::trade1(trade_info_struct trade_info) {
                  actual_src,
                  actual_dest);
 
-    SEND_INLINE_ACTION(*this,
-                       trade2,
-                       {_self, "active"_n},
-                       {best_reserve, trade_info, actual_src, actual_dest});
-}
-
-ACTION Network::trade2(name reserve,
-                       trade_info_struct trade_info,
-                       asset actual_src,
-                       asset actual_dest) {
-
-    eosio_assert( _code == _self, "current action can only be called internally" );
-    require_auth(_self);
-
     /* save dest balance to help verify later that dest amount was received. */
     asset dest_before_trade = get_balance(trade_info.dest_account,
                                           trade_info.dest_contract,
@@ -208,20 +194,20 @@ ACTION Network::trade2(name reserve,
         trade_info.src_contract,
         "transfer"_n,
         make_tuple(_self,
-                   reserve,
+                   best_reserve,
                    actual_src,
                    (name{trade_info.dest_account}).to_string())
     }.send();
 
     SEND_INLINE_ACTION(
         *this,
-        trade3,
+        trade2,
         {_self, "active"_n},
-        {reserve, trade_info, actual_src, actual_dest, dest_before_trade}
+        {best_reserve, trade_info, actual_src, actual_dest, dest_before_trade}
     );
 }
 
-ACTION Network::trade3(name reserve,
+ACTION Network::trade2(name reserve,
                        trade_info_struct trade_info,
                        asset actual_src,
                        asset actual_dest,
@@ -315,7 +301,7 @@ extern "C" {
         if (code == receiver){
             switch( action ) {
                 EOSIO_DISPATCH_HELPER( Network, (init)(setenable)(addreserve)(listpairres)(withdraw)
-                                                (trade1)(trade2)(trade3))
+                                                (trade1)(trade2))
             }
         }
         eosio_exit(0);
