@@ -84,32 +84,23 @@ ACTION Network::listpairres(name reserve,
             reservespert_table_inst.emplace(_self, [&]( auto& s ) {
                s.symbol = token_symbol;
                s.token_contract = token_contract;
-               s.reserve_contracts = vector<name>(MAX_RESERVES_PER_TOKEN, name());
-               s.reserve_contracts[0] = reserve;
-               s.num_reserves = 1;
+               s.reserve_contracts.push_back(reserve);
             });
         } else {
             reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
-                if(find_reserve(s.reserve_contracts, s.num_reserves, reserve) == NOT_FOUND) {
-                    /* reserve does not exist */
-                    eosio_assert(s.num_reserves < MAX_RESERVES_PER_TOKEN,
-                                 "reached number of reserves limit for this token ");
-                    s.reserve_contracts[s.num_reserves] = reserve;
-                    s.num_reserves++;
+                if(find_reserve(s.reserve_contracts, s.reserve_contracts.size(), reserve) == NOT_FOUND) {
+                    s.reserve_contracts.push_back(reserve);
                 }
             });
         }
     } else if (token_exists) {
         bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
-            int reserve_index = find_reserve(s.reserve_contracts, s.num_reserves, reserve);
+            int reserve_index = find_reserve(s.reserve_contracts, s.reserve_contracts.size(), reserve);
             if(reserve_index != NOT_FOUND) {
-                /* reserve exist */
-                s.reserve_contracts[reserve_index] = s.reserve_contracts[s.num_reserves-1];
-                s.reserve_contracts[s.num_reserves-1] = name();
-                s.num_reserves--;
+                s.reserve_contracts.erase(s.reserve_contracts.begin() + reserve_index);
             }
-            if(s.num_reserves == 0) {
+            if(!s.reserve_contracts.size()) {
                 last_reserve_for_token = true;
             }
         });
@@ -151,7 +142,6 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     double best_rate = 0;
     name best_reserve;
     get_best_rate_results(src, dest_symbol, best_rate, best_reserve);
-
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
     auto s = state_inst.get();
@@ -250,7 +240,7 @@ ACTION Network::trade2(name reserve,
 
 void Network::search_best_rate(reservespert_t &token_entry, asset src) {
     /* get rates from all reserves that hold the pair */
-    for (int i = 0; i < token_entry.num_reserves; i++) {
+    for (int i = 0; i < token_entry.reserve_contracts.size(); i++) {
         auto reserve = token_entry.reserve_contracts[i];
         action {permission_level{_self, "active"_n}, reserve, "getconvrate"_n, make_tuple(src)}.send();
     }
@@ -262,7 +252,7 @@ void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_
     symbol token_symbol = (src.symbol == EOS_SYMBOL) ? dest_symbol : src.symbol;
     auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
 
-    for (int i = 0; i < reservespert_entry.num_reserves; i++) {
+    for (int i = 0; i < reservespert_entry.reserve_contracts.size(); i++) {
         auto reserve = reservespert_entry.reserve_contracts[i];
         auto rate_entry = rate_type(reserve, reserve.value).get();
 
@@ -271,23 +261,6 @@ void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_
             best_rate = rate_entry.stored_rate;
         }
     }
-}
-
-void Network::calc_actuals(trade_info_struct &trade_info,
-                           double rate_result,
-                           uint64_t rate_result_dest_amount,
-                           asset &actual_src,
-                           asset &actual_dest) {
-    uint64_t actual_dest_amount;
-    uint64_t actual_src_amount;
-
-    actual_dest_amount = rate_result_dest_amount;
-    actual_src_amount = trade_info.src.amount;
-
-    actual_src.amount = actual_src_amount;
-    actual_src.symbol = trade_info.src.symbol;
-    actual_dest.amount = actual_dest_amount;
-    actual_dest.symbol = trade_info.dest.symbol;
 }
 
 int Network::find_reserve(vector<name> reserve_list, uint8_t num_reserves, name reserve) {

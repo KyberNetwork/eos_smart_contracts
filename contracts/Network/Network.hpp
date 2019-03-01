@@ -7,7 +7,6 @@
 
 using namespace eosio;
 
-#define MAX_RESERVES_PER_TOKEN  5
 #define NOT_FOUND              -1
 
 struct trade_info_struct {
@@ -42,7 +41,6 @@ CONTRACT Network : public contract {
             symbol          symbol;
             name            token_contract;
             vector<name>    reserve_contracts;
-            uint8_t         num_reserves;
             uint64_t        primary_key() const { return symbol.raw(); }
         };
 
@@ -86,12 +84,6 @@ CONTRACT Network : public contract {
         void search_best_rate(reservespert_t &token_entry, asset src);
 
         void get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve);
-
-        void calc_actuals(trade_info_struct &trade_info,
-                          double rate_result,
-                          uint64_t rate_result_dest_amount,
-                          asset &actual_src,
-                          asset &actual_dest);
 
         void test_and_set_entered(bool is_function_start);
 
