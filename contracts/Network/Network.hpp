@@ -30,6 +30,7 @@ CONTRACT Network : public contract {
             name        eos_contract;
             bool        is_enabled;
             bool        entered;
+            double      expected_rate;
         };
 
         TABLE reserve_t {
@@ -73,6 +74,10 @@ CONTRACT Network : public contract {
 
         ACTION withdraw(name to, asset quantity, name dest_contract);
 
+        ACTION getexprate(asset src, symbol dest_symbol);
+
+        ACTION storeexprate(asset src, symbol dest_symbol);
+
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
@@ -80,7 +85,7 @@ CONTRACT Network : public contract {
 
         void search_best_rate(reservespert_t &token_entry, asset src);
 
-        void get_best_rate_results(asset src, asset dest, double &best_rate, name &best_reserve);
+        void get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve);
 
         void calc_actuals(trade_info_struct &trade_info,
                           double rate_result,

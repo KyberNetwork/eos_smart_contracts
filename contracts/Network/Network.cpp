@@ -5,7 +5,7 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     eosio_assert(is_account(owner), "owner account does not exist");
     eosio_assert(is_account(eos_contract), "eos contract account does not exist");
 
-    require_auth(_self);
+    require_auth(_self); // can only be called internally
 
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
@@ -128,12 +128,43 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
     send(_self, to, quantity, dest_contract);
 }
 
+ACTION Network::getexprate(asset src, symbol dest_symbol) {
+    eosio_assert(src.is_valid(), "invalid transfer");
+    eosio_assert(src.amount > 0, "src amount must be positive");
+
+    eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
+    eosio_assert(src.symbol != dest_symbol, "src symbol can not equal dest symbol");
+
+    bool buy = (src.symbol == EOS_SYMBOL);
+    auto token_symbol = buy ? dest_symbol: src.symbol;
+
+    reservespert_type reservespert_table_inst(_self, _self.value);
+    auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
+
+    search_best_rate(token_entry, src);
+    SEND_INLINE_ACTION(*this, storeexprate, {_self, "active"_n}, {src, dest_symbol});
+}
+
+ACTION Network::storeexprate(asset src, symbol dest_symbol) {
+    require_auth(_self); // can only be called internally
+
+    double best_rate = 0;
+    name best_reserve;
+    get_best_rate_results(src, dest_symbol, best_rate, best_reserve);
+
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    auto s = state_inst.get();
+    s.expected_rate = best_rate;
+    state_inst.set(s, _self);
+}
+
 void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
     test_and_set_entered(true);
 
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
-    eosio_assert(quantity.amount > 0, "quantity must be positive in transfer");
+    eosio_assert(quantity.amount > 0, "quantity must be positive");
 
     symbol dest_symbol;
     auto trade_info = parse_memo(memo, dest_symbol);
@@ -161,12 +192,11 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
 }
 
 ACTION Network::trade1(trade_info_struct trade_info) {
-    eosio_assert( _code == _self, "current action can only be called internally" );
-    require_auth(_self);
+    require_auth(_self); // can only be called internally
 
     double best_rate = 0;
     name best_reserve;
-    get_best_rate_results(trade_info.src, trade_info.dest, best_rate, best_reserve);
+    get_best_rate_results(trade_info.src, trade_info.dest.symbol, best_rate, best_reserve);
     eosio_assert(best_rate != 0, "got 0 rate.");
     eosio_assert(best_rate >= trade_info.min_conversion_rate, "rate < min conversion rate.");
 
@@ -206,9 +236,7 @@ ACTION Network::trade2(name reserve,
                        asset actual_src,
                        asset actual_dest,
                        asset dest_before_trade) {
-
-    eosio_assert( _code == _self, "current action can only be called internally" );
-    require_auth(_self);
+    require_auth(_self); // can only be called internally
 
     /* verify dest balance was indeed added to dest account */
     auto dest_after_trade = get_balance(trade_info.dest_account,
@@ -228,10 +256,10 @@ void Network::search_best_rate(reservespert_t &token_entry, asset src) {
     }
 }
 
-void Network::get_best_rate_results(asset src, asset dest, double &best_rate, name &best_reserve) {
+void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve) {
     /* read stored rates from all reserves that hold the pair and decide on the best one */
     reservespert_type reservespert_table_inst(_self, _self.value);
-    symbol token_symbol = (src.symbol == EOS_SYMBOL) ? dest.symbol : src.symbol;
+    symbol token_symbol = (src.symbol == EOS_SYMBOL) ? dest_symbol : src.symbol;
     auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
 
     for (int i = 0; i < reservespert_entry.num_reserves; i++) {
@@ -325,7 +353,7 @@ extern "C" {
         else if (code == receiver){
             switch( action ) {
                 EOSIO_DISPATCH_HELPER( Network, (init)(setowner)(setenable)(addreserve)(listpairres)
-                                                (withdraw)(trade1)(trade2))
+                                                (withdraw)(trade1)(trade2)(getexprate)(storeexprate))
             }
         }
         eosio_exit(0);
