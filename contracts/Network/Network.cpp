@@ -156,60 +156,31 @@ void Network::trade0(name from, name to, asset quantity, string memo, state_t &c
     trade_info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
     trade_info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
 
-    /* get rates from all reserves that hold the pair */
-    for (int i = 0; i < token_entry.num_reserves; i++) {
-        auto reserve = token_entry.reserve_contracts[i];
-        action {permission_level{_self, "active"_n}, reserve, "getconvrate"_n, make_tuple(trade_info.src)}.send();
-    }
-
+    search_best_rate(token_entry, trade_info.src);
     SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {trade_info});
 }
 
 ACTION Network::trade1(trade_info_struct trade_info) {
-
     eosio_assert( _code == _self, "current action can only be called internally" );
     require_auth(_self);
 
-    /* read stored rates from all reserves that hold the pair and decide on the best one */
-    reservespert_type reservespert_table_inst(_self, _self.value);
-    symbol token_symbol = (trade_info.src.symbol == EOS_SYMBOL) ? trade_info.dest.symbol : trade_info.src.symbol;
-    auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
-
     double best_rate = 0;
-    name best_reserve = name();
-    struct rate_t best_rate_entry = {0};
-    for (int i = 0; i < reservespert_entry.num_reserves; i++) {
-        auto reserve = reservespert_entry.reserve_contracts[i];
-        auto rate_entry = rate_type(reserve, reserve.value).get();
-
-        if(rate_entry.stored_rate > best_rate) {
-            best_reserve = reservespert_entry.reserve_contracts[i];
-            best_rate_entry = rate_entry;
-        }
-    }
-
-    eosio_assert(best_rate_entry.stored_rate != 0,
-                 "got 0 rate.");
-    eosio_assert(best_rate_entry.stored_rate >= trade_info.min_conversion_rate,
-                 "rate smaller than min conversion rate.");
+    name best_reserve;
+    get_best_rate_results(trade_info.src, trade_info.dest, best_rate, best_reserve);
+    eosio_assert(best_rate != 0, "got 0 rate.");
+    eosio_assert(best_rate >= trade_info.min_conversion_rate, "rate < min conversion rate.");
 
     asset actual_src = trade_info.src;
-
-    uint64_t actual_dest_amount = calc_dest_amount(best_rate_entry.stored_rate,
+    uint64_t actual_dest_amount = calc_dest_amount(best_rate,
                                                    trade_info.src.symbol.precision(),
                                                    trade_info.src.amount,
                                                    trade_info.dest.symbol.precision());
     asset actual_dest = asset(actual_dest_amount, trade_info.dest.symbol);
-    eosio_assert(actual_dest_amount == best_rate_entry.dest_amount,
-                 "dest amount in reserve does not match src amount and rate");
 
     /* save dest balance to help verify later that dest amount was received. */
     asset dest_before_trade = get_balance(trade_info.dest_account,
                                           trade_info.dest_contract,
                                           trade_info.dest.symbol);
-
-    /* since no suitable method to turn double into string we do not pass
-     * conversion rate to reserve. Instead we assume that it's already stored there. */
 
     /* do reserve trade */
     action {
@@ -244,10 +215,35 @@ ACTION Network::trade2(name reserve,
                                         trade_info.dest_contract,
                                         trade_info.dest.symbol);
     asset dest_difference = dest_after_trade - dest_before_trade;
-
     eosio_assert(dest_difference == actual_dest, "trade amount not added to dest");
+
     test_and_set_entered(false);
 } /* end of trade process */
+
+void Network::search_best_rate(reservespert_t &token_entry, asset src) {
+    /* get rates from all reserves that hold the pair */
+    for (int i = 0; i < token_entry.num_reserves; i++) {
+        auto reserve = token_entry.reserve_contracts[i];
+        action {permission_level{_self, "active"_n}, reserve, "getconvrate"_n, make_tuple(src)}.send();
+    }
+}
+
+void Network::get_best_rate_results(asset src, asset dest, double &best_rate, name &best_reserve) {
+    /* read stored rates from all reserves that hold the pair and decide on the best one */
+    reservespert_type reservespert_table_inst(_self, _self.value);
+    symbol token_symbol = (src.symbol == EOS_SYMBOL) ? dest.symbol : src.symbol;
+    auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
+
+    for (int i = 0; i < reservespert_entry.num_reserves; i++) {
+        auto reserve = reservespert_entry.reserve_contracts[i];
+        auto rate_entry = rate_type(reserve, reserve.value).get();
+
+        if(rate_entry.stored_rate > best_rate) {
+            best_reserve = reserve;
+            best_rate = rate_entry.stored_rate;
+        }
+    }
+}
 
 void Network::calc_actuals(trade_info_struct &trade_info,
                            double rate_result,

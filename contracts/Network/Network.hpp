@@ -78,6 +78,10 @@ CONTRACT Network : public contract {
     private:
         void trade0(name from, name to, asset quantity, string memo, state_t &current_state);
 
+        void search_best_rate(reservespert_t &token_entry, asset src);
+
+        void get_best_rate_results(asset src, asset dest, double &best_rate, name &best_reserve);
+
         void calc_actuals(trade_info_struct &trade_info,
                           double rate_result,
                           uint64_t rate_result_dest_amount,
