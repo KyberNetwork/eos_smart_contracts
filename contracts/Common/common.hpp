@@ -19,14 +19,15 @@ using namespace eosio;
 #define EOS_SYMBOL symbol("EOS", EOS_PRECISION)
 #define MAX_RATE 100000 /* up to 1M tokens per EOS */
 
-/* TODO: should we support MAX_QTY? precision 18 leaves place for only 18.4 tokens in uint64*/
-/* #define MAX_QTY pow(10,28) */
+/* 2^62 - 1 is max amount in asset.
+ * We want any amount to be multiply-able by 10^4 ~= 2^14 and still be lower. */
+#define MAX_AMOUNT ((1LL << (62-14)) - 1)
 
 struct transfer { /* TODO - can this be removed? */
     name         from;
     name         to;
     asset        quantity;
-    string  memo;
+    string       memo;
 };
 
 struct account {
@@ -36,7 +37,7 @@ struct account {
 
 struct rate_t {
     double      stored_rate;
-    uint64_t    dest_amount;
+    int64_t    dest_amount;
     EOSLIB_SERIALIZE( rate_t, (stored_rate)(dest_amount) )
 };
 
@@ -102,43 +103,46 @@ float stof(const char* s) {
     return rez * fact;
 };
 
-double amount_to_damount(uint64_t amount, uint64_t precision) {
-    return (amount / double(pow(10, precision)));
+double amount_to_damount(int64_t amount, uint64_t precision) {
+    return (double(amount) / double(pow(10, precision)));
 }
 
-uint64_t damount_to_amount(double damount, uint64_t precision) {
-    return uint64_t(damount * double(pow(10, precision)));
+int64_t damount_to_amount(double damount, uint64_t precision) {
+    eosio_assert(damount < MAX_AMOUNT, "fail overflow validation");
+    return int64_t(damount * double(pow(10, precision)));
 }
 
-uint64_t damount_to_ceil_amount(double damount, uint64_t precision) {
-    return uint64_t(ceil(damount * double(pow(10, precision))));
+int64_t damount_to_ceil_amount(double damount, uint64_t precision) {
+    eosio_assert(damount < MAX_AMOUNT, "fail overflow validation");
+    return int64_t(ceil(damount * double(pow(10, precision))));
 }
 
 double asset_to_damount(asset quantity) {
-    return (quantity.amount / double(pow(10, quantity.symbol.precision())));
+    return (double(quantity.amount) / double(pow(10, quantity.symbol.precision())));
 }
 
-uint64_t calc_src_amount(double rate,
-                         uint64_t src_precision,
-                         uint64_t dest_amount,
-                         uint64_t dest_precision) {
+int64_t calc_src_amount(double rate,
+                        uint64_t src_precision,
+                        int64_t dest_amount,
+                        uint64_t dest_precision) {
 
     double dest_damount = amount_to_damount(dest_amount, dest_precision);
     double src_damount = dest_damount / rate;
     /* source quantity is rounded up. to avoid dest quantity being too low. */
-    uint64_t src_amount = damount_to_ceil_amount(src_damount, src_precision);
+    int64_t src_amount = damount_to_ceil_amount(src_damount, src_precision);
 
     return src_amount;
 }
 
-uint64_t calc_dest_amount(double rate,
-                          uint64_t src_precision,
-                          uint64_t src_amount,
-                          uint64_t dest_precision) {
+int64_t calc_dest_amount(double rate,
+                         uint64_t src_precision,
+                         int64_t src_amount,
+                         uint64_t dest_precision) {
 
     double src_damount = amount_to_damount(src_amount, src_precision);
+    eosio_assert(src_damount < MAX_AMOUNT, "fail overflow validation");
     double dest_damount = src_damount * rate;
-    uint64_t dest_amount = damount_to_amount(dest_damount, dest_precision);
+    int64_t dest_amount = damount_to_amount(dest_damount, dest_precision);
 
     return dest_amount;
 }

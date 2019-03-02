@@ -5,7 +5,7 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     eosio_assert(is_account(owner), "owner account does not exist");
     eosio_assert(is_account(eos_contract), "eos contract account does not exist");
 
-    require_auth(_self); // can only be called internally
+    require_auth(_self);
 
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
@@ -88,7 +88,8 @@ ACTION Network::listpairres(name reserve,
             });
         } else {
             reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
-                if(find_reserve(s.reserve_contracts, s.reserve_contracts.size(), reserve) == NOT_FOUND) {
+                auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
+                if (res_it == s.reserve_contracts.end()) {
                     s.reserve_contracts.push_back(reserve);
                 }
             });
@@ -96,9 +97,9 @@ ACTION Network::listpairres(name reserve,
     } else if (token_exists) {
         bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
-            int reserve_index = find_reserve(s.reserve_contracts, s.reserve_contracts.size(), reserve);
-            if(reserve_index != NOT_FOUND) {
-                s.reserve_contracts.erase(s.reserve_contracts.begin() + reserve_index);
+            auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
+            if (res_it != s.reserve_contracts.end()) {
+                s.reserve_contracts.erase(res_it);
             }
             if(!s.reserve_contracts.size()) {
                 last_reserve_for_token = true;
@@ -111,10 +112,11 @@ ACTION Network::listpairres(name reserve,
 }
 
 ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
+    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
+
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().owner);
-    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
 
     send(_self, to, quantity, dest_contract);
 }
@@ -142,6 +144,7 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     double best_rate = 0;
     name best_reserve;
     get_best_rate_results(src, dest_symbol, best_rate, best_reserve);
+
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
     auto s = state_inst.get();
@@ -150,7 +153,7 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
 }
 
 void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
-    test_and_set_entered(true);
+    test_and_set_entered(true); // avoid reentrancy
 
     eosio_assert(memo.length() > 0, "needs a memo with transaction details");
     eosio_assert(quantity.is_valid(), "invalid transfer");
@@ -207,18 +210,13 @@ ACTION Network::trade1(trade_info_struct trade_info) {
         permission_level{_self, "active"_n},
         trade_info.src_contract,
         "transfer"_n,
-        make_tuple(_self,
-                   best_reserve,
-                   actual_src,
-                   (name{trade_info.dest_account}).to_string())
+        make_tuple(_self, best_reserve, actual_src, (name{trade_info.dest_account}).to_string())
     }.send();
 
-    SEND_INLINE_ACTION(
-        *this,
-        trade2,
-        {_self, "active"_n},
-        {best_reserve, trade_info, actual_src, actual_dest, dest_before_trade}
-    );
+    SEND_INLINE_ACTION(*this,
+                       trade2,
+                       {_self, "active"_n},
+                       {best_reserve, trade_info, actual_src, actual_dest, dest_before_trade});
 }
 
 ACTION Network::trade2(name reserve,
@@ -261,15 +259,6 @@ void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_
             best_rate = rate_entry.stored_rate;
         }
     }
-}
-
-int Network::find_reserve(vector<name> reserve_list, uint8_t num_reserves, name reserve) {
-    for(int index = 0; index < num_reserves; index++) {
-        if (reserve_list[index] == reserve) {
-            return index;
-        }
-    }
-    return NOT_FOUND;
 }
 
 void Network::test_and_set_entered(bool is_function_start){

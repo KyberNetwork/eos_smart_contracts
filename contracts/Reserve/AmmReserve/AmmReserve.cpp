@@ -232,7 +232,6 @@ double AmmReserve::sell_rate(const struct params_t &current_params,
                              double &delta_e) {
 
     delta_e = delta_e_func(current_params, e, delta_t);
-    /* require(deltaEInFp <= maxQtyInFp); */
     return delta_e / sell_input_qty;
 }
 
@@ -242,7 +241,7 @@ double AmmReserve::sell_rate_zero_quantity(const struct params_t &current_params
 }
 
 double AmmReserve::value_after_reducing_fee(const struct params_t &current_params, double val) {
-    /* require(val <= BIG_NUMBER); */
+    eosio_assert(val < MAX_AMOUNT, "fail overflow validation");
     return ((100.0 - current_params.fee_percent) * val) / 100.0;
 }
 

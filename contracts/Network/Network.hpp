@@ -7,8 +7,6 @@
 
 using namespace eosio;
 
-#define NOT_FOUND -1
-
 struct trade_info_struct {
     name        trader;
     name        src_contract;
@@ -86,10 +84,6 @@ CONTRACT Network : public contract {
         void get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve);
 
         void test_and_set_entered(bool is_function_start);
-
-        int find_reserve(vector<name> reserve_list,
-                         uint8_t num_reserves,
-                         name reserve);
 
         trade_info_struct parse_memo(string memo, symbol &dest_symbol);
 };
