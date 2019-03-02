@@ -7,7 +7,7 @@
 
 using namespace eosio;
 
-#define NOT_FOUND              -1
+#define NOT_FOUND -1
 
 struct trade_info_struct {
     name        trader;

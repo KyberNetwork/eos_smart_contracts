@@ -36,7 +36,7 @@ CONTRACT AmmReserve : public contract {
         /* TODO: the following is duplicated with common.hpp, see if can remove from here. */
         TABLE rate_t {
             double      stored_rate; /* TODO - adding hash/id to make sure we read correct rate? */
-            uint64_t    dest_amount; /* TODO: make it an asset to comply with standard that amounts are assets, rates are double? */
+            int64_t     dest_amount; /* TODO: make it an asset to comply with standard that amounts are assets, rates are double? */
         };
 
         typedef eosio::singleton<"state"_n, state_t> state_type;
@@ -78,7 +78,7 @@ CONTRACT AmmReserve : public contract {
     private:
 
         double reserve_get_conv_rate(asset      src,
-                                     uint64_t   &dest_amount);
+                                     int64_t    &dest_amount);
 
         double liquidity_get_rate(const struct state_t &current_state,
                                   const struct params_t &current_params,

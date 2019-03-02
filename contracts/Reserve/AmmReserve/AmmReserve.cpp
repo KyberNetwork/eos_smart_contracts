@@ -100,7 +100,7 @@ ACTION AmmReserve::resetfee() {
 
 ACTION AmmReserve::getconvrate(asset src) {
     double rate;
-    uint64_t dest_amount;
+    int64_t dest_amount;
 
     rate = reserve_get_conv_rate(src, dest_amount);
     if(rate == 0) dest_amount = 0;
@@ -121,7 +121,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
 }
 
 double AmmReserve::reserve_get_conv_rate(asset      src,
-                                         uint64_t   &dest_amount) {
+                                         int64_t   &dest_amount) {
 
     /* verify contract was init */
     state_type state_instance(_self, _self.value);
@@ -308,10 +308,10 @@ void AmmReserve::do_trade(const struct params_t &current_params,
                           name dest_contract) {
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
 
-    uint64_t dest_amount = calc_dest_amount(conversion_rate,
-                                            src.symbol.precision(),
-                                            src.amount,
-                                            dest_symbol.precision());
+    int64_t dest_amount = calc_dest_amount(conversion_rate,
+                                           src.symbol.precision(),
+                                           src.amount,
+                                           dest_symbol.precision());
     eosio_assert(dest_amount > 0, "internal error. calculated dest amount must be > 0");
 
     asset dest;
@@ -332,7 +332,7 @@ void AmmReserve::record_fees(const struct params_t &current_params,
 
     double dfees;
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
-    uint64_t fees_amount;
+    int64_t fees_amount;
 
     if (buy) {
         dfees = (token_damount * current_params.fee_percent /

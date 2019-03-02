@@ -191,10 +191,10 @@ ACTION Network::trade1(trade_info_struct trade_info) {
     eosio_assert(best_rate >= trade_info.min_conversion_rate, "rate < min conversion rate.");
 
     asset actual_src = trade_info.src;
-    uint64_t actual_dest_amount = calc_dest_amount(best_rate,
-                                                   trade_info.src.symbol.precision(),
-                                                   trade_info.src.amount,
-                                                   trade_info.dest.symbol.precision());
+    int64_t actual_dest_amount = calc_dest_amount(best_rate,
+                                                  trade_info.src.symbol.precision(),
+                                                  trade_info.src.amount,
+                                                  trade_info.dest.symbol.precision());
     asset actual_dest = asset(actual_dest_amount, trade_info.dest.symbol);
 
     /* save dest balance to help verify later that dest amount was received. */
@@ -293,7 +293,6 @@ trade_info_struct Network::parse_memo(string memo, symbol &dest_symbol) {
 }
 
 void Network::transfer(name from, name to, asset quantity, string memo) {
-
     /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
     * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
