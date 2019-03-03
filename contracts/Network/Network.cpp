@@ -58,11 +58,7 @@ ACTION Network::addreserve(name reserve, bool add) {
     }
 }
 
-ACTION Network::listpairres(name reserve,
-                            symbol token_symbol,
-                            name token_contract,
-                            bool add
-) {
+ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contract, bool add) {
     eosio_assert(is_account(token_contract), "token contract account does not exist");
 
     state_type state_inst(_self, _self.value);
@@ -148,82 +144,76 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     state_inst.set(s, _self);
 }
 
-void Network::trade0(name from, name to, asset quantity, string memo, state_t &current_state) {
-    test_and_set_entered(true); // avoid reentrancy
+void Network::trade0(name from, name to, asset src, string memo, state_t &current_state) {
+    reentrancy_check(true);
 
-    eosio_assert(memo.length() > 0, "needs a memo with transaction details");
-    eosio_assert(quantity.is_valid(), "invalid transfer");
-    eosio_assert(quantity.amount > 0, "quantity must be positive");
+    eosio_assert(memo.length() > 0, "needs a memo");
+    eosio_assert(src.is_valid(), "invalid transfer");
+    eosio_assert(src.amount > 0, "src must be positive");
 
     symbol dest_symbol;
-    auto trade_info = parse_memo(memo, dest_symbol);
-    eosio_assert(trade_info.receiver != _self, "dest account can not be network contract");
+    auto info = parse_memo(memo, dest_symbol);
+    eosio_assert(info.receiver != _self, "receiver can not be network contract");
 
-    eosio_assert(quantity.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
-    eosio_assert(quantity.symbol != dest_symbol, "src symbol can not equal dest symbol");
+    eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "src or dest must be EOS");
+    eosio_assert(src.symbol != dest_symbol, "src symbol can not equal dest symbol");
 
-    bool buy = (quantity.symbol == EOS_SYMBOL);
-    auto token_symbol = buy ? dest_symbol: quantity.symbol;
+    bool buy = (src.symbol == EOS_SYMBOL);
+    auto token_symbol = buy ? dest_symbol: src.symbol;
 
     reservespert_type reservespert_table_inst(_self, _self.value);
     auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
 
-    trade_info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
-    eosio_assert(_code == trade_info.src_contract, "_code does not match registered eos/token contract.");
+    info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
+    eosio_assert(_code == info.src_contract, "_code does not match registered eos/token contract.");
 
-    trade_info.sender = from;
-    trade_info.src = quantity;
-    trade_info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
-    trade_info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
+    info.sender = from;
+    info.src = src;
+    info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
+    info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
 
-    search_best_rate(token_entry, trade_info.src);
-    SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {trade_info});
+    search_best_rate(token_entry, info.src);
+    SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {info});
 }
 
-ACTION Network::trade1(trade_info_struct trade_info) {
+ACTION Network::trade1(trade_info info) {
     require_auth(_self); // can only be called internally
 
     double best_rate = 0;
     name best_reserve;
-    get_best_rate_results(trade_info.src, trade_info.dest.symbol, best_rate, best_reserve);
+    get_best_rate_results(info.src, info.dest.symbol, best_rate, best_reserve);
     eosio_assert(best_rate != 0, "got 0 rate.");
-    eosio_assert(best_rate >= trade_info.min_conversion_rate, "rate < min conversion rate.");
+    eosio_assert(best_rate >= info.min_conversion_rate, "rate < min conversion rate.");
 
     int64_t dest_amount = calc_dest_amount(best_rate,
-                                           trade_info.src.symbol.precision(),
-                                           trade_info.src.amount,
-                                           trade_info.dest.symbol.precision());
-    asset dest = asset(dest_amount, trade_info.dest.symbol);
+                                           info.src.symbol.precision(),
+                                           info.src.amount,
+                                           info.dest.symbol.precision());
+    asset dest = asset(dest_amount, info.dest.symbol);
 
     /* save dest balance to help verify later that dest amount was received. */
-    asset receiver_balance_before = get_balance(trade_info.receiver,
-                                          trade_info.dest_contract,
-                                          trade_info.dest.symbol);
+    asset receiver_balance_before = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
-    trans(_self, best_reserve, trade_info.src, trade_info.src_contract, (name{trade_info.receiver}).to_string());
+    trans(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
 
-    SEND_INLINE_ACTION(*this,
-                       trade2,
-                       {_self, "active"_n},
-                       {best_reserve, trade_info, trade_info.src, dest, receiver_balance_before});
+    SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
+                       {best_reserve, info, info.src, dest, receiver_balance_before});
 }
 
 ACTION Network::trade2(name reserve,
-                       trade_info_struct trade_info,
+                       trade_info info,
                        asset src,
                        asset dest,
                        asset receiver_balance_before) {
     require_auth(_self); // can only be called internally
 
     /* verify dest balance was indeed added to dest account */
-    auto receiver_balance_after = get_balance(trade_info.receiver,
-                                        trade_info.dest_contract,
-                                        trade_info.dest.symbol);
+    auto receiver_balance_after = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
     asset balance_diff = receiver_balance_after - receiver_balance_before;
     eosio_assert(balance_diff == dest, "trade amount not added to receiver");
 
-    test_and_set_entered(false);
+    reentrancy_check(false);
 } /* end of trade process */
 
 void Network::search_best_rate(reservespert_t &token_entry, asset src) {
@@ -251,23 +241,23 @@ void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_
     }
 }
 
-void Network::test_and_set_entered(bool is_function_start){
+void Network::reentrancy_check(bool enter){
     state_type state_inst(_self, _self.value);
     auto s = state_inst.get();
-    eosio_assert(s.entered != is_function_start, "recursively entering during a trade");
-    s.entered = is_function_start;
+    eosio_assert(s.during_trade != enter, "re-entrancy during a trade");
+    s.during_trade = enter;
     state_inst.set(s, _self);
 }
 
-trade_info_struct Network::parse_memo(string memo, symbol &dest_symbol) {
-    auto res = trade_info_struct();
+trade_info Network::parse_memo(string memo, symbol &dest_symbol) {
+    auto res = trade_info();
     auto parts = split(memo, ",");
 
     auto sym_parts = split(parts[0], " ");
     dest_symbol = symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str()));
 
     res.receiver = name(parts[1].c_str());
-    res.min_conversion_rate = stof(parts[2].c_str()); /* TODO: is it ok to use stdof to parse double? */
+    res.min_conversion_rate = stof(parts[2].c_str());
     return res;
 }
 

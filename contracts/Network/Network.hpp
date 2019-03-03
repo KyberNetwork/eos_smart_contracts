@@ -7,7 +7,7 @@
 
 using namespace eosio;
 
-struct trade_info_struct {
+struct trade_info {
     name        sender;
     name        src_contract; //=>
     asset       src;
@@ -26,7 +26,7 @@ CONTRACT Network : public contract {
             name        owner;
             name        eos_contract;
             bool        enabled;
-            bool        entered;
+            bool        during_trade;
             double      expected_rate;
         };
 
@@ -55,15 +55,12 @@ CONTRACT Network : public contract {
 
         ACTION addreserve(name reserve, bool add);
 
-        ACTION listpairres(name reserve,
-                           symbol token_symbol,
-                           name token_contract,
-                           bool add);
+        ACTION listpairres(name reserve, symbol token_symbol, name token_contract, bool add);
 
-        ACTION trade1(trade_info_struct trade_info);
+        ACTION trade1(trade_info info);
 
         ACTION trade2(name reserve,
-                      trade_info_struct trade_info,
+                      trade_info info,
                       asset src,
                       asset dest,
                       asset receiver_balance_before);
@@ -77,13 +74,13 @@ CONTRACT Network : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        void trade0(name from, name to, asset quantity, string memo, state_t &current_state);
+        void trade0(name from, name to, asset src, string memo, state_t &current_state);
 
         void search_best_rate(reservespert_t &token_entry, asset src);
 
         void get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve);
 
-        void test_and_set_entered(bool is_function_start);
+        void reentrancy_check(bool enter);
 
-        trade_info_struct parse_memo(string memo, symbol &dest_symbol);
+        trade_info parse_memo(string memo, symbol &dest_symbol);
 };
