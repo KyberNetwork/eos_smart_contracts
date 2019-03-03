@@ -1,4 +1,5 @@
 #include "./AmmReserve.hpp"
+#include "liquidity.hpp"
 
 using namespace eosio;
 
@@ -131,8 +132,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
     send(_self, to, quantity, dest_contract);
 }
 
-double AmmReserve::reserve_get_conv_rate(asset      src,
-                                         int64_t   &dest_amount) {
+double AmmReserve::reserve_get_conv_rate(asset src, int64_t  &dest_amount) {
 
     /* verify contract was init */
     state_type state_inst(_self, _self.value);
@@ -150,7 +150,7 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
     if (!current_state.trade_enabled) return 0;
 
     bool is_buy = (EOS_SYMBOL == src.symbol) ? true : false;
-    double rate = liquidity_get_rate(current_state.eos_contract, current_params, is_buy, src);
+    double rate = liquidity_get_rate(_self, current_state.eos_contract, (liquidity_params*)(&current_params), is_buy, src);
     if (rate == 0) return 0;
 
     uint64_t dest_precision = is_buy ? current_state.token_symbol.precision() : EOS_PRECISION;
@@ -169,106 +169,7 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
     return rate;
 }
 
-double AmmReserve::liquidity_get_rate(name eos_contract,
-                                      const struct params_t &current_params,
-                                      bool is_buy,
-                                      asset src) {
-    /* require(qtyInSrcWei <= MAX_QTY); */ // covered by asset limits
-
-    asset eos_balance = get_balance(_self, eos_contract, EOS_SYMBOL);
-    double e = asset_to_damount(eos_balance);
-    double rate = get_rate_with_e(current_params, is_buy, src, e);
-
-    return rate;
-}
-
-double AmmReserve::get_rate_with_e(const struct params_t &current_params,
-                                   bool is_buy,
-                                   asset src,
-                                   double e) {
-
-    double src_damount = asset_to_damount(src);
-    double rate, delta_e, delta_t;
-
-    if (is_buy) {
-        delta_e = src_damount;
-        if (src.amount > current_params.max_eos_cap_buy.amount) return 0;
-        rate = (delta_e == 0) ? buy_rate_zero_quantity(current_params, e) :
-                                buy_rate(current_params, e, delta_e);
-    } else {
-        auto delta_t = value_after_reducing_fee(current_params, src_damount);
-        rate = (delta_t == 0) ? sell_rate_zero_quantity(current_params, e) :
-                                sell_rate(current_params, e, src_damount, delta_t, delta_e);
-        if (delta_t == 0) delta_e = 0;
-        if (delta_e > current_params.max_eos_cap_sell.amount) return 0;
-    }
-    return rate_after_validation(current_params, rate, is_buy);
-}
-
-double AmmReserve::rate_after_validation(const struct params_t &current_params,
-                                         double rate,
-                                         bool buy) {
-    double min_allowed_rate, max_allowed_rate;
-
-    if (buy) {
-        min_allowed_rate = current_params.min_buy_rate;
-        max_allowed_rate = current_params.max_buy_rate;
-    } else {
-        min_allowed_rate = current_params.min_sell_rate;
-        max_allowed_rate = current_params.max_sell_rate;
-    }
-
-    if ((rate > max_allowed_rate) || (rate < min_allowed_rate) || (rate > MAX_RATE)) return 0;
-    return rate;
-}
-
-double AmmReserve::buy_rate(const struct params_t &current_params, double e, double delta_e) {
-    double delta_t = delta_t_func(current_params, e, delta_e);
-    /* require(deltaTInFp <= maxQtyInFp); */
-    delta_t = value_after_reducing_fee(current_params, delta_t);
-    return delta_t / delta_e;
-}
-
-double AmmReserve::buy_rate_zero_quantity(const struct params_t &current_params, double e) {
-    double rate_pre_reduction = 1 / p_of_e(current_params, e);
-    return value_after_reducing_fee(current_params, rate_pre_reduction);
-}
-
-double AmmReserve::sell_rate(const struct params_t &current_params,
-                             double e,
-                             double sell_input_qty,
-                             double delta_t,
-                             double &delta_e) {
-
-    delta_e = delta_e_func(current_params, e, delta_t);
-    return delta_e / sell_input_qty;
-}
-
-double AmmReserve::sell_rate_zero_quantity(const struct params_t &current_params, double e) {
-    double rate_pre_reduction = p_of_e(current_params, e);
-    return value_after_reducing_fee(current_params, rate_pre_reduction);
-}
-
-double AmmReserve::value_after_reducing_fee(const struct params_t &current_params, double val) {
-    eosio_assert(val < MAX_AMOUNT, "fail overflow validation");
-    return ((100.0 - current_params.fee_percent) * val) / 100.0;
-}
-
-double AmmReserve::p_of_e(const struct params_t &current_params, double e) {
-    return current_params.p_min * exp(current_params.r * e);
-}
-
-double AmmReserve::delta_t_func(const struct params_t &current_params, double e, double delta_e) {
-    return (-1) *
-           ((exp(-current_params.r * delta_e) - 1.0) /
-            (current_params.r * p_of_e(current_params, e)));
-}
-
-double AmmReserve::delta_e_func(const struct params_t &current_params, double e, double delta_t) {
-    return ((log(1 + current_params.r * p_of_e(current_params, e) * delta_t)) / current_params.r);
-}
-
-void AmmReserve::reserve_trade(name from, asset quantity, string memo, name code, state_t &current_state) {
+void AmmReserve::trade(name from, asset quantity, string memo, name code, state_t &current_state) {
 
     eosio_assert(current_state.trade_enabled, "trade disabled");
     eosio_assert(from == current_state.network_contract, "only network can perform a trade");
@@ -299,43 +200,24 @@ void AmmReserve::reserve_trade(name from, asset quantity, string memo, name code
     /* get conversion rate, assuming it is stored here since getconvrate was called beforehand in this tx */
     rate_type rate_instance(_self, _self.value);
     double conversion_rate = rate_instance.get().stored_rate;
-
-    do_trade(current_params,
-             quantity,
-             dest_address,
-             conversion_rate,
-             dest_symbol,
-             dest_contract);
-}
-
-void AmmReserve::do_trade(const struct params_t &current_params,
-                          asset src,
-                          name dest_address,
-                          double conversion_rate,
-                          symbol dest_symbol,
-                          name dest_contract) {
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
 
     int64_t dest_amount = calc_dest_amount(conversion_rate,
-                                           src.symbol.precision(),
-                                           src.amount,
+                                           quantity.symbol.precision(),
+                                           quantity.amount,
                                            dest_symbol.precision());
     eosio_assert(dest_amount > 0, "internal error. calculated dest amount must be > 0");
 
-    asset dest;
-    dest.symbol = dest_symbol;
-    dest.amount = dest_amount;
-
-    bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
-    asset token = buy ? dest : src;
+    asset dest = asset(dest_amount, dest_symbol);
+    bool buy = (quantity.symbol == EOS_SYMBOL) ? true : false;
+    asset token = buy ? dest : quantity;
     record_fees(current_params, token, buy);
 
+    // do trade
     send(_self, dest_address, dest, dest_contract);
 }
 
-void AmmReserve::record_fees(const struct params_t &current_params,
-                             asset token,
-                             bool buy) {
+void AmmReserve::record_fees(const struct params_t &current_params, asset token, bool buy) {
     /* require(val <= MAX_QTY); */
 
     double dfees;
@@ -373,7 +255,7 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
         /* owner can deposit funds, but not trade */
         return;
     } else {
-        reserve_trade(from, quantity, memo, _code, current_state);
+        trade(from, quantity, memo, _code, current_state);
         return;
     }
     eosio_assert(false, "unreachable code");

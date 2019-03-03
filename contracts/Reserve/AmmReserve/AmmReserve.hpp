@@ -77,54 +77,10 @@ CONTRACT AmmReserve : public contract {
 
     private:
 
-        double reserve_get_conv_rate(asset      src,
-                                     int64_t    &dest_amount);
+        double reserve_get_conv_rate(asset src, int64_t    &dest_amount);
 
-        double liquidity_get_rate(name eos_contract,
-                                  const struct params_t &current_params,
-                                  bool is_buy,
-                                  asset src);
+        void trade(name from, asset quantity, string memo, name code, state_t &current_state);
 
-        double get_rate_with_e(const struct params_t &current_params,
-                               bool is_buy,
-                               asset src,
-                               double e);
-
-        double rate_after_validation(const struct params_t &current_params,
-                                     double rate,
-                                     bool buy);
-
-        double buy_rate(const struct params_t &current_params, double e, double delta_e);
-
-        double buy_rate_zero_quantity(const struct params_t &current_params, double e);
-
-        double sell_rate(const struct params_t &current_params,
-                         double e,
-                         double sell_input_qty,
-                         double delta_t,
-                         double &delta_e);
-
-        double sell_rate_zero_quantity(const struct params_t &current_params, double e);
-
-        double value_after_reducing_fee(const struct params_t &current_params,double val);
-
-        double p_of_e(const struct params_t &current_params, double e);
-
-        double delta_t_func(const struct params_t &current_params, double e, double delta_e);
-
-        double delta_e_func(const struct params_t &current_params, double e, double delta_t);
-
-        void reserve_trade(name from, asset quantity, string memo, name code, state_t &current_state);
-
-        void do_trade(const struct params_t &current_params,
-                      asset src,
-                      name dest_address,
-                      double conversion_rate,
-                      symbol dest_symbol,
-                      name dest_contract);
-
-        void record_fees(const struct params_t &current_params,
-                         asset token,
-                         bool buy);
+        void record_fees(const struct params_t &current_params, asset token, bool buy);
 };
 
