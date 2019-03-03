@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <string>
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/print.hpp>
 #include <eosiolib/asset.hpp>
@@ -9,7 +11,7 @@ using namespace eosio;
 
 struct trade_info {
     name        sender;
-    name        src_contract; //=>
+    name        src_contract;
     asset       src;
     name        dest_contract;
     asset       dest;
@@ -18,7 +20,6 @@ struct trade_info {
 };
 
 CONTRACT Network : public contract {
-
     public:
         using contract::contract;
 
@@ -43,7 +44,7 @@ CONTRACT Network : public contract {
         };
 
         typedef eosio::singleton<"state"_n, state_t> state_type;
-        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi; /* hack until abi generator generates correct name */
+        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
         typedef eosio::multi_index<"reserve"_n, reserve_t> reserves_type;
         typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
 
@@ -59,11 +60,7 @@ CONTRACT Network : public contract {
 
         ACTION trade1(trade_info info);
 
-        ACTION trade2(name reserve,
-                      trade_info info,
-                      asset src,
-                      asset dest,
-                      asset receiver_balance_before);
+        ACTION trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre);
 
         ACTION withdraw(name to, asset quantity, name dest_contract);
 
@@ -78,7 +75,7 @@ CONTRACT Network : public contract {
 
         void search_best_rate(reservespert_t &token_entry, asset src);
 
-        void get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve);
+        void get_best_rate_results(asset src, symbol dest_symbol, double &rate, name &reserve);
 
         void reentrancy_check(bool enter);
 

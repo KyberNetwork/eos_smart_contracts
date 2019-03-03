@@ -1,4 +1,4 @@
-#include "./Network.hpp"
+#include "Network.hpp"
 #include <math.h>
 
 ACTION Network::init(name owner, name eos_contract, bool enable) {
@@ -50,7 +50,7 @@ ACTION Network::addreserve(name reserve, bool add) {
     bool exists = (itr != reserves_inst.end());
     eosio_assert(add != exists, "can only add a non existing reserve or delete an existing one");
     if (add) {
-        reserves_inst.emplace(_self, [&]( auto& s ) {
+        reserves_inst.emplace(_self, [&](auto& s) {
             s.contract = reserve;
         });
     } else {
@@ -74,13 +74,13 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
 
     if (add) {
         if (!token_exists) {
-            reservespert_table_inst.emplace(_self, [&]( auto& s ) {
+            reservespert_table_inst.emplace(_self, [&](auto& s) {
                s.symbol = token_symbol;
                s.token_contract = token_contract;
                s.reserve_contracts.push_back(reserve);
             });
         } else {
-            reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
+            reservespert_table_inst.modify(itr, _self, [&](auto& s) {
                 auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
                 if (res_it == s.reserve_contracts.end()) {
                     s.reserve_contracts.push_back(reserve);
@@ -89,12 +89,12 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
         }
     } else if (token_exists) {
         bool last_reserve_for_token = false;
-        reservespert_table_inst.modify(itr, _self, [&]( auto& s ) {
+        reservespert_table_inst.modify(itr, _self, [&](auto& s) {
             auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
             if (res_it != s.reserve_contracts.end()) {
                 s.reserve_contracts.erase(res_it);
             }
-            if(!s.reserve_contracts.size()) {
+            if (!s.reserve_contracts.size()) {
                 last_reserve_for_token = true;
             }
         });
@@ -119,7 +119,7 @@ ACTION Network::getexprate(asset src, symbol dest_symbol) {
     eosio_assert(src.is_valid(), "invalid transfer");
     eosio_assert(src.amount > 0, "src amount must be positive");
 
-    eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
+    eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "src or dest must be EOS");
     eosio_assert(src.symbol != dest_symbol, "src symbol can not equal dest symbol");
 
     reservespert_type reservespert_table_inst(_self, _self.value);
@@ -131,7 +131,7 @@ ACTION Network::getexprate(asset src, symbol dest_symbol) {
 }
 
 ACTION Network::storeexprate(asset src, symbol dest_symbol) {
-    require_auth(_self); // can only be called internally
+    require_auth(_self);  // can only be called internally
 
     double best_rate = 0;
     name best_reserve;
@@ -177,7 +177,7 @@ void Network::trade0(name from, name to, asset src, string memo, state_t &curren
 }
 
 ACTION Network::trade1(trade_info info) {
-    require_auth(_self); // can only be called internally
+    require_auth(_self);  // can only be called internally
 
     double best_rate = 0;
     name best_reserve;
@@ -185,32 +185,24 @@ ACTION Network::trade1(trade_info info) {
     eosio_assert(best_rate != 0, "got 0 rate.");
     eosio_assert(best_rate >= info.min_conversion_rate, "rate < min conversion rate.");
 
-    int64_t dest_amount = calc_dest_amount(best_rate,
-                                           info.src.symbol.precision(),
-                                           info.src.amount,
-                                           info.dest.symbol.precision());
-    asset dest = asset(dest_amount, info.dest.symbol);
+    asset dest;
+    calc_dest(best_rate, info.src, info.dest.symbol, dest);
 
-    /* save dest balance to help verify later that dest amount was received. */
-    asset receiver_balance_before = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    asset balance_pre = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
     trans(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
 
     SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
-                       {best_reserve, info, info.src, dest, receiver_balance_before});
+                       {best_reserve, info, info.src, dest, balance_pre});
 }
 
-ACTION Network::trade2(name reserve,
-                       trade_info info,
-                       asset src,
-                       asset dest,
-                       asset receiver_balance_before) {
-    require_auth(_self); // can only be called internally
+ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre) {
+    require_auth(_self);  // can only be called internally
 
     /* verify dest balance was indeed added to dest account */
-    auto receiver_balance_after = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
-    asset balance_diff = receiver_balance_after - receiver_balance_before;
+    auto balance_post = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    asset balance_diff = balance_post - balance_pre;
     eosio_assert(balance_diff == dest, "trade amount not added to receiver");
 
     reentrancy_check(false);
@@ -220,28 +212,31 @@ void Network::search_best_rate(reservespert_t &token_entry, asset src) {
     /* get rates from all reserves that hold the pair */
     for (int i = 0; i < token_entry.reserve_contracts.size(); i++) {
         auto reserve = token_entry.reserve_contracts[i];
-        action {permission_level{_self, "active"_n}, reserve, "getconvrate"_n, make_tuple(src)}.send();
+        action {permission_level{_self, "active"_n},
+                reserve,
+                "getconvrate"_n,
+                make_tuple(src)}.send();
     }
 }
 
-void Network::get_best_rate_results(asset src, symbol dest_symbol, double &best_rate, name &best_reserve) {
+void Network::get_best_rate_results(asset src, symbol dest_symbol, double &rate, name &reserve) {
     /* read stored rates from all reserves that hold the pair and decide on the best one */
     reservespert_type reservespert_table_inst(_self, _self.value);
     symbol token_symbol = (src.symbol == EOS_SYMBOL) ? dest_symbol : src.symbol;
     auto reservespert_entry = reservespert_table_inst.get(token_symbol.raw());
 
     for (int i = 0; i < reservespert_entry.reserve_contracts.size(); i++) {
-        auto reserve = reservespert_entry.reserve_contracts[i];
-        auto rate_entry = rate_type(reserve, reserve.value).get();
+        auto current_reserve = reservespert_entry.reserve_contracts[i];
+        auto current_rate_entry = rate_type(current_reserve, current_reserve.value).get();
 
-        if(rate_entry.stored_rate > best_rate) {
-            best_reserve = reserve;
-            best_rate = rate_entry.stored_rate;
+        if (current_rate_entry.stored_rate > rate) {
+            reserve = current_reserve;
+            rate = current_rate_entry.stored_rate;
         }
     }
 }
 
-void Network::reentrancy_check(bool enter){
+void Network::reentrancy_check(bool enter) {
     state_type state_inst(_self, _self.value);
     auto s = state_inst.get();
     eosio_assert(s.during_trade != enter, "re-entrancy during a trade");
@@ -287,14 +282,13 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
 
 extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-
         if (action == "transfer"_n.value && code != receiver) {
-            eosio::execute_action( eosio::name(receiver), eosio::name(code), &Network::transfer );
-        }
-        else if (code == receiver){
-            switch( action ) {
+            eosio::execute_action(eosio::name(receiver), eosio::name(code), &Network::transfer);
+        } else if (code == receiver) {
+            switch (action) {
                 EOSIO_DISPATCH_HELPER( Network, (init)(setowner)(setenable)(addreserve)(listpairres)
-                                                (withdraw)(trade1)(trade2)(getexprate)(storeexprate))
+                                                (withdraw)(trade1)(trade2)(getexprate)
+                                                (storeexprate))
             }
         }
         eosio_exit(0);

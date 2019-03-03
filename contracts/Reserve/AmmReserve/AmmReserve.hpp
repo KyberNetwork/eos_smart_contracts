@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/print.hpp>
 #include <eosiolib/asset.hpp>
@@ -7,7 +8,6 @@
 #include "../../Common/common.hpp"
 
 CONTRACT AmmReserve : public contract {
-
     public:
         using contract::contract;
 
@@ -40,11 +40,11 @@ CONTRACT AmmReserve : public contract {
         };
 
         typedef eosio::singleton<"state"_n, state_t> state_type;
-        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi; /* hack until abi generator generates correct name */
+        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
         typedef eosio::singleton<"params"_n, params_t> params_type;
-        typedef eosio::multi_index<"params"_n, params_t> dummy_params_for_abi; /* hack until abi generator generates correct name */
+        typedef eosio::multi_index<"params"_n, params_t> dummy_params_for_abi;
         typedef eosio::singleton<"rate"_n, rate_t> rate_type;
-        typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi; /* hack until abi generator generates correct name */
+        typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi;
 
         ACTION init(name    owner,
                     name    network_contract,
@@ -76,10 +76,9 @@ CONTRACT AmmReserve : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-
         double reserve_get_conv_rate(asset src, asset &dest);
 
-        void trade(name from, asset src, string memo, name code, state_t &current_state);
+        void trade(name from, asset src, string memo, name code, state_t &state);
 
         void record_fees(const struct params_t &params, asset token, bool buy);
 };

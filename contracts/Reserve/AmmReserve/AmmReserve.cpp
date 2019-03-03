@@ -1,4 +1,4 @@
-#include "./AmmReserve.hpp"
+#include "AmmReserve.hpp"
 #include "liquidity.hpp"
 
 using namespace eosio;
@@ -131,12 +131,11 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
-
     state_type state_inst(_self, _self.value);
     /* if reserve not ready return gracefully to continue queries in network */
     if (!state_inst.exists()) return 0;
-    auto current_state = state_inst.get();
-    if (!current_state.trade_enabled) return 0;
+    auto state = state_inst.get();
+    if (!state.trade_enabled) return 0;
 
     /* verify params were set */
     params_type params_inst(_self, _self.value);
@@ -144,30 +143,29 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
     auto params = params_inst.get();
 
     bool buy = (EOS_SYMBOL == src.symbol) ? true : false;
-    double rate = liquidity_get_rate(_self, current_state.eos_contract, (liquidity_params*)(&params), buy, src);
+    liq_params *liquidity_params = reinterpret_cast <liq_params *>(&params);
+    double rate = liquidity_get_rate(_self, state.eos_contract, liquidity_params, buy, src);
     if (rate == 0) return 0;
 
-    symbol dest_symbol = buy ? current_state.token_symbol : EOS_SYMBOL;
-    int64_t dest_amount = calc_dest_amount(rate, src.symbol.precision(), src.amount, dest_symbol.precision());
-    dest = asset(dest_amount, dest_symbol);
+    symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
+    calc_dest(rate, src, dest_symbol, dest);
 
     /* make sure reserve has enough of the dest token */
-    name dest_contract = buy ? current_state.token_contract : current_state.eos_contract;
+    name dest_contract = buy ? state.token_contract : state.eos_contract;
     asset this_balance = get_balance(_self, dest_contract, dest_symbol);
     if (this_balance < dest) return 0;
 
     return rate;
 }
 
-void AmmReserve::trade(name from, asset src, string memo, name code, state_t &current_state) {
-
-    eosio_assert(current_state.trade_enabled, "trade disabled");
-    eosio_assert(from == current_state.network_contract, "only network can perform a trade");
-    eosio_assert(code == current_state.token_contract || code == current_state.eos_contract,
+void AmmReserve::trade(name from, asset src, string memo, name code, state_t &state) {
+    eosio_assert(state.trade_enabled, "trade disabled");
+    eosio_assert(from == state.network_contract, "only network can perform a trade");
+    eosio_assert(code == state.token_contract || code == state.eos_contract,
                  "must come from token contract or eos contract");
 
     eosio_assert(src.is_valid(), "invalid transfer");
-    eosio_assert(src.symbol == EOS_SYMBOL || src.symbol == current_state.token_symbol,
+    eosio_assert(src.symbol == EOS_SYMBOL || src.symbol == state.token_symbol,
                  "unrecognized transfer asset symbol");
 
     params_type params_inst(_self, _self.value);
@@ -181,25 +179,21 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &cu
     symbol dest_symbol;
     name dest_contract;
     if (src.symbol == EOS_SYMBOL) {
-        dest_symbol = current_state.token_symbol;
-        dest_contract = current_state.token_contract;
+        dest_symbol = state.token_symbol;
+        dest_contract = state.token_contract;
     } else {
         dest_symbol = EOS_SYMBOL;
-        dest_contract = current_state.eos_contract;
+        dest_contract = state.eos_contract;
     }
 
-    /* get conversion rate, assuming it is stored here since getconvrate was called beforehand in this tx */
+    /* rate is stored since getconvrate was called beforehand in this tx */
     rate_type rate_inst(_self, _self.value);
     double conversion_rate = rate_inst.get().stored_rate;
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
 
-    int64_t dest_amount = calc_dest_amount(conversion_rate,
-                                           src.symbol.precision(),
-                                           src.amount,
-                                           dest_symbol.precision());
-    eosio_assert(dest_amount > 0, "internal error. calculated dest amount must be > 0");
+    asset dest;
+    calc_dest(conversion_rate, src, dest_symbol, dest);
 
-    asset dest = asset(dest_amount, dest_symbol);
     bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
     asset token = buy ? dest : src;
     record_fees(params, token, buy);
@@ -224,7 +218,6 @@ void AmmReserve::record_fees(const struct params_t &params, asset token, bool bu
 }
 
 void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
-
     /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
     * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
@@ -235,12 +228,12 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
         return;
     }
 
-    auto current_state = state_inst.get();
-    if (from == current_state.owner) {
+    auto state = state_inst.get();
+    if (from == state.owner) {
         /* owner can deposit funds, but not trade */
         return;
     } else {
-        trade(from, quantity, memo, _code, current_state);
+        trade(from, quantity, memo, _code, state);
         return;
     }
     eosio_assert(false, "unreachable code");
@@ -250,8 +243,7 @@ extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
         if (action == "transfer"_n.value && code != receiver) {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &AmmReserve::transfer);
-        }
-        else if (code == receiver) {
+        } else if (code == receiver) {
             switch (action) {
                 EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setowner)(setnetwork)(setenable)
                                                   (resetfee)(getconvrate)(withdraw))

@@ -1,13 +1,12 @@
 #pragma once
 
+#include <math.h>
+#include <string>
+#include <vector>
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/symbol.hpp>
 #include <eosiolib/singleton.hpp>
-
-#include <math.h>
-#include <string>
-#include <vector>
 
 using std::string;
 using std::vector;
@@ -39,7 +38,7 @@ typedef eosio::singleton<"rate"_n, rate_t> rate_type;
 asset get_balance(name user, name token_contract, symbol symbol) {
     accounts fromAcc(token_contract, user.value);
     auto itr = fromAcc.find(symbol.code().raw());
-    if ( itr == fromAcc.end()) {
+    if (itr == fromAcc.end()) {
         /* balance was never created */
         return asset(0, symbol);
     }
@@ -59,15 +58,13 @@ void trans(name from, name to, asset quantity, name dest_contract, string memo) 
 vector<string> split(const string& str, const string& delim) {
     vector<string> tokens;
     size_t prev = 0, pos = 0;
-    do
-    {
+    do {
         pos = str.find(delim, prev);
         if (pos == string::npos) pos = str.length();
         string token = str.substr(prev, pos-prev);
         tokens.push_back(token);
         prev = pos + delim.length();
-    }
-    while (pos < str.length() && prev < str.length());
+    } while (pos < str.length() && prev < str.length());
     return tokens;
 }
 
@@ -92,7 +89,7 @@ float stof(const char* s) {
     }
 
     return rez * fact;
-};
+}
 
 double amount_to_damount(int64_t amount, uint64_t precision) {
     return (double(amount) / double(pow(10, precision)));
@@ -112,28 +109,11 @@ double asset_to_damount(asset quantity) {
     return (double(quantity.amount) / double(pow(10, quantity.symbol.precision())));
 }
 
-int64_t calc_src_amount(double rate,
-                        uint64_t src_precision,
-                        int64_t dest_amount,
-                        uint64_t dest_precision) {
-
-    double dest_damount = amount_to_damount(dest_amount, dest_precision);
-    double src_damount = dest_damount / rate;
-    /* source quantity is rounded up. to avoid dest quantity being too low. */
-    int64_t src_amount = damount_to_ceil_amount(src_damount, src_precision);
-
-    return src_amount;
-}
-
-int64_t calc_dest_amount(double rate,
-                         uint64_t src_precision,
-                         int64_t src_amount,
-                         uint64_t dest_precision) {
-
-    double src_damount = amount_to_damount(src_amount, src_precision);
+void calc_dest(double rate, asset src, symbol dest_symbol, asset &dest) {
+    double src_damount = amount_to_damount(src.amount, src.symbol.precision());
     eosio_assert(src_damount < MAX_AMOUNT, "fail overflow validation");
     double dest_damount = src_damount * rate;
-    int64_t dest_amount = damount_to_amount(dest_damount, dest_precision);
+    int64_t dest_amount = damount_to_amount(dest_damount, dest_symbol.precision());
 
-    return dest_amount;
+    dest = asset(dest_amount, dest_symbol);
 }
