@@ -273,6 +273,12 @@ describe('As owner', () => {
 });
 
 describe('as non owner', () => {
+    xit('can not call internal function trade1', async function() {
+        //const networkAsOwner = await networkOwnerData.eos.contract(networkData.account);
+       // await networkAsOwner.trade1({trade_info: {0,0,0,0,0}})
+    });
+    
+    
     it('buy token with precision 4', async function() {
         const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
 

@@ -158,7 +158,7 @@ describe('as non reserve owner', () => {
         const token = await aliceData.eos.contract(tokenData.account);
         const p = token.transfer({from:aliceData.account, to:reserveData.account, quantity:"23.0000 EOS", memo:mosheData.account},
                              {authorization: [`${aliceData.account}@active`]});
-        await ensureContractAssertionError(p, "not coming from network contract");
+        await ensureContractAssertionError(p, "only network can perform a trade");
     });
 });
 
@@ -258,11 +258,13 @@ describe('As network', () => {
 });
 
 describe('As non network', () => {
+    /* we currently indeed allow it:
     it('can not get conversion rate', async function() {
         const reserve = await aliceData.eos.contract(reserveData.account);
         const p = reserve.getconvrate({src: "0.0000 EOS"},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
+    */
 })
 
 describe('As reserve', () => {
