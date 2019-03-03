@@ -61,11 +61,11 @@ CONTRACT AmmReserve : public contract {
                           double max_sell_rate,
                           double min_sell_rate);
 
+        ACTION setowner(name new_owner);
+
         ACTION setnetwork(name network_contract);
 
-        ACTION enabletrade();
-
-        ACTION disabletrade();
+        ACTION setenable(bool enable);
 
         ACTION resetfee();
 
@@ -80,11 +80,10 @@ CONTRACT AmmReserve : public contract {
         double reserve_get_conv_rate(asset      src,
                                      int64_t    &dest_amount);
 
-        double liquidity_get_rate(const struct state_t &current_state,
+        double liquidity_get_rate(name eos_contract,
                                   const struct params_t &current_params,
                                   bool is_buy,
                                   asset src);
-
 
         double get_rate_with_e(const struct params_t &current_params,
                                bool is_buy,

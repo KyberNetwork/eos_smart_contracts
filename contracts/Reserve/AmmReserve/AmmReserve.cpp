@@ -8,11 +8,15 @@ ACTION AmmReserve::init(name    owner,
                         name    token_contract,
                         name    eos_contract,
                         bool    enable_trade) {
+    eosio_assert(is_account(owner), "owner account does not exist");
+    eosio_assert(is_account(network_contract), "network account does not exist");
+    eosio_assert(is_account(token_contract), "token account does not exist");
+    eosio_assert(is_account(eos_contract), "eos contract account does not exist");
 
     require_auth(_self);
 
-    state_type state_instance(_self, _self.value);
-    eosio_assert(!state_instance.exists(), "init already called");
+    state_type state_inst(_self, _self.value);
+    eosio_assert(!state_inst.exists(), "init already called");
 
     state_t new_state;
     new_state.owner = owner;
@@ -23,7 +27,7 @@ ACTION AmmReserve::init(name    owner,
     new_state.trade_enabled = enable_trade;
     new_state.collected_fees_in_tokens.symbol = token_symbol;
     new_state.collected_fees_in_tokens.amount = 0;
-    state_instance.set(new_state, _self);
+    state_inst.set(new_state, _self);
 }
 
 ACTION AmmReserve::setparams(double r,
@@ -33,9 +37,9 @@ ACTION AmmReserve::setparams(double r,
                              double fee_percent,
                              double max_sell_rate,
                              double min_sell_rate) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-    require_auth(state_instance.get().owner);
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().owner);
 
     eosio_assert(fee_percent < 100, "illegal fee_percent");
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
@@ -54,48 +58,52 @@ ACTION AmmReserve::setparams(double r,
     params_instance.set(new_params, _self);
 }
 
-ACTION AmmReserve::setnetwork(name network_contract) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
+ACTION AmmReserve::setowner(name new_owner) {
+    eosio_assert(is_account(new_owner), "new owner account does not exist");
 
-    auto s = state_instance.get();
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+
+    auto s = state_inst.get();
+    require_auth(s.owner);
+
+    s.owner = new_owner;
+    state_inst.set(s, _self);
+}
+
+ACTION AmmReserve::setnetwork(name network_contract) {
+    eosio_assert(is_account(network_contract), "network account does not exist");
+
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+
+    auto s = state_inst.get();
     require_auth(s.owner);
 
     s.network_contract = network_contract;
-    state_instance.set(s, _self);
+    state_inst.set(s, _self);
 }
 
-ACTION AmmReserve::enabletrade() {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
+ACTION AmmReserve::setenable(bool enable) {
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
 
-    auto s = state_instance.get();
+    auto s = state_inst.get();
     require_auth(s.owner);
 
-    s.trade_enabled = true;
-    state_instance.set(s, _self);
-}
-
-ACTION AmmReserve::disabletrade() {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-
-    auto s = state_instance.get();
-    require_auth(s.owner);
-
-    s.trade_enabled = false;
-    state_instance.set(s, _self);
+    s.trade_enabled = enable;
+    state_inst.set(s, _self);
 }
 
 ACTION AmmReserve::resetfee() {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
 
-    auto s = state_instance.get();
+    auto s = state_inst.get();
     require_auth(s.owner);
 
     s.collected_fees_in_tokens.amount = 0;
-    state_instance.set(s, _self);
+    state_inst.set(s, _self);
 }
 
 ACTION AmmReserve::getconvrate(asset src) {
@@ -113,9 +121,12 @@ ACTION AmmReserve::getconvrate(asset src) {
 }
 
 ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
-    state_type state_instance(_self, _self.value);
-    eosio_assert(state_instance.exists(), "init not called yet");
-    require_auth(state_instance.get().owner);
+    eosio_assert(is_account(to), "to account does not exist");
+    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
+
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().owner);
 
     send(_self, to, quantity, dest_contract);
 }
@@ -124,10 +135,10 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
                                          int64_t   &dest_amount) {
 
     /* verify contract was init */
-    state_type state_instance(_self, _self.value);
+    state_type state_inst(_self, _self.value);
     /* if reserve is not ready return gracefully to allow other rate queries in network */
-    if (!state_instance.exists()) return 0;
-    auto current_state = state_instance.get();
+    if (!state_inst.exists()) return 0;
+    auto current_state = state_inst.get();
 
     /* verify params were set */
     params_type params_instance(_self, _self.value);
@@ -136,11 +147,10 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
 
     /* we only allow network to get conversion rate since it actually writes to ram */
     require_auth(current_state.network_contract);
-
     if (!current_state.trade_enabled) return 0;
 
     bool is_buy = (EOS_SYMBOL == src.symbol) ? true : false;
-    double rate = liquidity_get_rate(current_state, current_params, is_buy, src);
+    double rate = liquidity_get_rate(current_state.eos_contract, current_params, is_buy, src);
     if (rate == 0) return 0;
 
     uint64_t dest_precision = is_buy ? current_state.token_symbol.precision() : EOS_PRECISION;
@@ -159,14 +169,13 @@ double AmmReserve::reserve_get_conv_rate(asset      src,
     return rate;
 }
 
-double AmmReserve::liquidity_get_rate(const struct state_t &current_state,
+double AmmReserve::liquidity_get_rate(name eos_contract,
                                       const struct params_t &current_params,
                                       bool is_buy,
                                       asset src) {
+    /* require(qtyInSrcWei <= MAX_QTY); */ // covered by asset limits
 
-    /* require(qtyInSrcWei <= MAX_QTY); */
-
-    asset eos_balance = get_balance(_self, current_state.eos_contract, EOS_SYMBOL);
+    asset eos_balance = get_balance(_self, eos_contract, EOS_SYMBOL);
     double e = asset_to_damount(eos_balance);
     double rate = get_rate_with_e(current_params, is_buy, src, e);
 
@@ -260,21 +269,21 @@ double AmmReserve::delta_e_func(const struct params_t &current_params, double e,
 }
 
 void AmmReserve::reserve_trade(name from, asset quantity, string memo, name code, state_t &current_state) {
+
+    eosio_assert(current_state.trade_enabled, "trade disabled");
+    eosio_assert(from == current_state.network_contract, "only network can perform a trade");
+    eosio_assert(code == current_state.token_contract || code == current_state.eos_contract,
+                 "must come from token contract or eos contract");
+
+    eosio_assert(quantity.is_valid(), "invalid transfer");
+    eosio_assert(quantity.symbol == EOS_SYMBOL || quantity.symbol == current_state.token_symbol,
+                 "unrecognized transfer asset symbol");
+
     params_type params_instance(_self, _self.value);
     eosio_assert(params_instance.exists(), "params were not set");
     auto current_params = params_instance.get();
 
-    eosio_assert(code == current_state.token_contract || code == current_state.eos_contract,
-                 "needs to come from token contract or eos contract");
-    eosio_assert(quantity.is_valid(), "invalid transfer");
-    eosio_assert(current_state.trade_enabled, "trade is not enabled");
-
     eosio_assert(memo.length() > 0 , "needs a memo");
-
-    eosio_assert(quantity.symbol == EOS_SYMBOL ||
-                 quantity.symbol == current_state.token_symbol,
-                 "unrecognized transfer asset symbol");
-
     name dest_address = name(memo.c_str());
 
     symbol dest_symbol;
@@ -287,7 +296,7 @@ void AmmReserve::reserve_trade(name from, asset quantity, string memo, name code
         dest_contract = current_state.eos_contract;
     }
 
-    /* get conversion rate, assuming it is stored here since getconvrate was called beforehand */
+    /* get conversion rate, assuming it is stored here since getconvrate was called beforehand in this tx */
     rate_type rate_instance(_self, _self.value);
     double conversion_rate = rate_instance.get().stored_rate;
 
@@ -341,10 +350,10 @@ void AmmReserve::record_fees(const struct params_t &current_params,
     }
     fees_amount = damount_to_amount(dfees, token.symbol.precision());
 
-    state_type state_instance(_self, _self.value);
-    auto s = state_instance.get();
+    state_type state_inst(_self, _self.value);
+    auto s = state_inst.get();
     s.collected_fees_in_tokens.amount += fees_amount;
-    state_instance.set(s, _self);
+    state_inst.set(s, _self);
 }
 
 void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
@@ -353,23 +362,20 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
     * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
 
-    state_type state_instance(_self, _self.value);
-    if (!state_instance.exists()) {
-        /* if init not called yet allow anyone to deposit. */
+    state_type state_inst(_self, _self.value);
+    if (!state_inst.exists()) {
+        /* if init not called yet don't trade, instead allow anyone to deposit. */
         return;
     }
 
-    auto current_state = state_instance.get();
+    auto current_state = state_inst.get();
     if (from == current_state.owner) {
-        /* owner can (only) deposit funds */
+        /* owner can deposit funds, but not trade */
         return;
     } else {
-        /* only network can perform a trade */
-        eosio_assert(from == current_state.network_contract, "not coming from network contract");
         reserve_trade(from, quantity, memo, _code, current_state);
         return;
     }
-
     eosio_assert(false, "unreachable code");
 }
 
@@ -380,8 +386,8 @@ extern "C" {
         }
         else if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setnetwork)(enabletrade)
-                                                  (disabletrade)(resetfee)(getconvrate)(withdraw))
+                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setowner)(setnetwork)(setenable)
+                                                  (resetfee)(getconvrate)(withdraw))
             }
         }
         eosio_exit(0);

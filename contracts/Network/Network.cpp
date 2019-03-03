@@ -112,6 +112,7 @@ ACTION Network::listpairres(name reserve,
 }
 
 ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
+    eosio_assert(is_account(to), "to account does not exist");
     eosio_assert(is_account(dest_contract), "dest contract account does not exist");
 
     state_type state_inst(_self, _self.value);
