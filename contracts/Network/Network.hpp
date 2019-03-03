@@ -8,12 +8,12 @@
 using namespace eosio;
 
 struct trade_info_struct {
-    name        trader;
-    name        src_contract;
+    name        sender;
+    name        src_contract; //=>
     asset       src;
     name        dest_contract;
     asset       dest;
-    name        dest_account;
+    name        receiver;
     double      min_conversion_rate;
 };
 
@@ -25,7 +25,7 @@ CONTRACT Network : public contract {
         TABLE state_t {
             name        owner;
             name        eos_contract;
-            bool        is_enabled;
+            bool        enabled;
             bool        entered;
             double      expected_rate;
         };
@@ -64,9 +64,9 @@ CONTRACT Network : public contract {
 
         ACTION trade2(name reserve,
                       trade_info_struct trade_info,
-                      asset actual_src,
-                      asset actual_dest,
-                      asset dest_before_trade);
+                      asset src,
+                      asset dest,
+                      asset receiver_balance_before);
 
         ACTION withdraw(name to, asset quantity, name dest_contract);
 
