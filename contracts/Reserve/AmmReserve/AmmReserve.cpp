@@ -109,13 +109,13 @@ ACTION AmmReserve::resetfee() {
 
 ACTION AmmReserve::getconvrate(asset src) {
     double rate;
-    int64_t dest_amount;
+    asset dest;
 
-    rate = reserve_get_conv_rate(src, dest_amount);
-    if(rate == 0) dest_amount = 0;
+    rate = reserve_get_conv_rate(src, dest);
+    if(rate == 0) dest = asset();
 
     rate_type rate_instance(_self, _self.value);
-    rate_t s = {rate, dest_amount};
+    rate_t s = {rate, dest};
     rate_instance.set(s, _self);
 }
 
@@ -130,7 +130,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
     trans(_self, to, quantity, dest_contract, "");
 }
 
-double AmmReserve::reserve_get_conv_rate(asset src, int64_t  &dest_amount) {
+double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
 
     /* verify contract was init */
     state_type state_inst(_self, _self.value);
@@ -151,18 +151,14 @@ double AmmReserve::reserve_get_conv_rate(asset src, int64_t  &dest_amount) {
     double rate = liquidity_get_rate(_self, current_state.eos_contract, (liquidity_params*)(&current_params), is_buy, src);
     if (rate == 0) return 0;
 
-    uint64_t dest_precision = is_buy ? current_state.token_symbol.precision() : EOS_PRECISION;
-    dest_amount = calc_dest_amount(rate,
-                                   src.symbol.precision(),
-                                   src.amount,
-                                   dest_precision);
+    symbol dest_symbol = is_buy ? current_state.token_symbol : EOS_SYMBOL;
+    int64_t dest_amount = calc_dest_amount(rate, src.symbol.precision(), src.amount, dest_symbol.precision());
+    dest = asset(dest_amount, dest_symbol);
 
     /* make sure reserve has enough of the dest token */
-    asset this_balance = get_balance(_self,
-                                     is_buy ? current_state.token_contract : current_state.eos_contract,
-                                     is_buy ? current_state.token_symbol : EOS_SYMBOL);
-
-    if (this_balance.amount < dest_amount) return 0;
+    name dest_contract = is_buy ? current_state.token_contract : current_state.eos_contract;
+    asset this_balance = get_balance(_self, dest_contract, dest_symbol);
+    if (this_balance < dest) return 0;
 
     return rate;
 }
@@ -184,6 +180,7 @@ void AmmReserve::trade(name from, asset quantity, string memo, name code, state_
 
     eosio_assert(memo.length() > 0 , "needs a memo");
     name dest_address = name(memo.c_str());
+    eosio_assert(dest_address != _self, "dest address can not be current contract");
 
     symbol dest_symbol;
     name dest_contract;

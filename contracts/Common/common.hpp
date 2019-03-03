@@ -23,13 +23,6 @@ using namespace eosio;
  * We want any amount to be multiply-able by 10^4 ~= 2^14 and still be lower. */
 #define MAX_AMOUNT ((1LL << (62-14)) - 1)
 
-struct transfer { /* TODO - can this be removed? */
-    name         from;
-    name         to;
-    asset        quantity;
-    string       memo;
-};
-
 struct account {
     asset    balance;
     uint64_t primary_key() const { return balance.symbol.code().raw(); }
@@ -37,12 +30,11 @@ struct account {
 
 struct rate_t {
     double     stored_rate;
-    int64_t    dest_amount;
+    asset      dest;
 };
 
 typedef eosio::multi_index<"accounts"_n, account> accounts;
 typedef eosio::singleton<"rate"_n, rate_t> rate_type;
-typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi; /* hack until abi generator generates correct name */
 
 asset get_balance(name user, name token_contract, symbol symbol) {
     accounts fromAcc(token_contract, user.value);
