@@ -10,10 +10,7 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state_t new_state;
-    new_state.owner = owner;
-    new_state.eos_contract = eos_contract;
-    new_state.is_enabled = enable;
+    state_t new_state = {owner, eos_contract, enable, false, 0};
     state_inst.set(new_state, _self);
 }
 
@@ -119,7 +116,7 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().owner);
 
-    send(_self, to, quantity, dest_contract);
+    trans(_self, to, quantity, dest_contract, "");
 }
 
 ACTION Network::getexprate(asset src, symbol dest_symbol) {
@@ -129,10 +126,8 @@ ACTION Network::getexprate(asset src, symbol dest_symbol) {
     eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "either src or dest must be EOS");
     eosio_assert(src.symbol != dest_symbol, "src symbol can not equal dest symbol");
 
-    bool buy = (src.symbol == EOS_SYMBOL);
-    auto token_symbol = buy ? dest_symbol: src.symbol;
-
     reservespert_type reservespert_table_inst(_self, _self.value);
+    auto token_symbol = (src.symbol == EOS_SYMBOL) ? dest_symbol: src.symbol;
     auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
 
     search_best_rate(token_entry, src);
@@ -207,12 +202,7 @@ ACTION Network::trade1(trade_info_struct trade_info) {
                                           trade_info.dest.symbol);
 
     /* do reserve trade */
-    action {
-        permission_level{_self, "active"_n},
-        trade_info.src_contract,
-        "transfer"_n,
-        make_tuple(_self, best_reserve, actual_src, (name{trade_info.dest_account}).to_string())
-    }.send();
+    trans(_self, best_reserve, actual_src, trade_info.src_contract, (name{trade_info.dest_account}).to_string());
 
     SEND_INLINE_ACTION(*this,
                        trade2,

@@ -55,12 +55,12 @@ asset get_balance(name user, name token_contract, symbol symbol) {
     return userAcc.balance;
 }
 
-void send(name from, name to, asset quantity, name dest_contract) {
+void trans(name from, name to, asset quantity, name dest_contract, string memo) {
     action {
         permission_level{from, "active"_n},
         dest_contract,
         "transfer"_n,
-        std::make_tuple(from, to, quantity, string("memo"))
+        std::make_tuple(from, to, quantity, memo)
     }.send();
 }
 

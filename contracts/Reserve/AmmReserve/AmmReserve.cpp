@@ -115,9 +115,7 @@ ACTION AmmReserve::getconvrate(asset src) {
     if(rate == 0) dest_amount = 0;
 
     rate_type rate_instance(_self, _self.value);
-    rate_t s;
-    s.stored_rate = rate;
-    s.dest_amount = dest_amount;
+    rate_t s = {rate, dest_amount};
     rate_instance.set(s, _self);
 }
 
@@ -129,7 +127,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().owner);
 
-    send(_self, to, quantity, dest_contract);
+    trans(_self, to, quantity, dest_contract, "");
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, int64_t  &dest_amount) {
@@ -213,8 +211,8 @@ void AmmReserve::trade(name from, asset quantity, string memo, name code, state_
     asset token = buy ? dest : quantity;
     record_fees(current_params, token, buy);
 
-    // do trade
-    send(_self, dest_address, dest, dest_contract);
+    /* do trade */
+    trans(_self, dest_address, dest, dest_contract, "");
 }
 
 void AmmReserve::record_fees(const struct params_t &current_params, asset token, bool buy) {
