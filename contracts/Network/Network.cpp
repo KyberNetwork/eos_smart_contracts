@@ -102,6 +102,18 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
             reservespert_table_inst.erase(itr);
         }
     }
+
+    /* Note: token stats entries are never deleted, so we can continue count on re-list. */
+    if (add && !token_exists) {
+        tokenstats_type tokenstats_table_inst(_self, _self.value);
+        if (tokenstats_table_inst.find(token_symbol.raw()) == tokenstats_table_inst.end()) {
+            tokenstats_table_inst.emplace(_self, [&](auto& s) {
+               s.token_counter = asset(0, token_symbol);
+               s.eos_counter = asset(0, EOS_SYMBOL);
+               s.reset_time = time_point_sec(now());
+            });
+        }
+    }
 }
 
 ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
@@ -205,6 +217,18 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
     auto balance_post = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
     asset balance_diff = balance_post - balance_pre;
     eosio_assert(balance_diff == dest, "trade amount not added to receiver");
+
+    /* update token stats */
+    bool buy = (src.symbol == EOS_SYMBOL);
+    asset eos = buy ? src : dest;
+    asset token = buy ? dest : src;
+
+    tokenstats_type tokenstats_table_inst(_self, _self.value);
+    auto itr = tokenstats_table_inst.find(token.symbol.raw());
+    tokenstats_table_inst.modify(itr, _self, [&](auto& s) {
+        s.token_counter += token;
+        s.eos_counter += eos;
+    });
 
     reentrancy_check(false);
 } /* end of trade process */

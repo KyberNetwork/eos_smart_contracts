@@ -5,6 +5,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/print.hpp>
 #include <eosiolib/asset.hpp>
+#include <eosiolib/time.hpp>
 #include "../Common/common.hpp"
 
 using namespace eosio;
@@ -43,10 +44,18 @@ CONTRACT Network : public contract {
             uint64_t        primary_key() const { return symbol.raw(); }
         };
 
+        TABLE tokenstats_t {
+            asset           token_counter;
+            asset           eos_counter;
+            time_point_sec  reset_time;
+            uint64_t        primary_key() const { return token_counter.symbol.raw(); }
+        };
+
         typedef eosio::singleton<"state"_n, state_t> state_type;
         typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
         typedef eosio::multi_index<"reserve"_n, reserve_t> reserves_type;
         typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
+        typedef eosio::multi_index<"tokenstats"_n, tokenstats_t> tokenstats_type;
 
         ACTION init(name owner, name eos_contract, bool enable);
 
