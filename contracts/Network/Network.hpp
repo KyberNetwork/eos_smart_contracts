@@ -50,7 +50,7 @@ CONTRACT Network : public contract {
 
         ACTION init(name owner, name eos_contract, bool enable);
 
-        ACTION setowner(name new_owner);
+        ACTION setowner(name owner);
 
         ACTION setenable(bool enable);
 
@@ -58,20 +58,20 @@ CONTRACT Network : public contract {
 
         ACTION listpairres(name reserve, symbol token_symbol, name token_contract, bool add);
 
-        ACTION trade1(trade_info info);
-
-        ACTION trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre);
-
         ACTION withdraw(name to, asset quantity, name dest_contract);
 
         ACTION getexprate(asset src, symbol dest_symbol);
 
         ACTION storeexprate(asset src, symbol dest_symbol);
 
+        ACTION trade1(trade_info info);
+
+        ACTION trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre);
+
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        void trade0(name from, name to, asset src, string memo, state_t &current_state);
+        void trade(name from, name to, asset src, string memo, state_t &current_state);
 
         void search_best_rate(reservespert_t &token_entry, asset src);
 

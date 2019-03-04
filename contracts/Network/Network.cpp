@@ -3,7 +3,7 @@
 
 ACTION Network::init(name owner, name eos_contract, bool enable) {
     eosio_assert(is_account(owner), "owner account does not exist");
-    eosio_assert(is_account(eos_contract), "eos contract account does not exist");
+    eosio_assert(is_account(eos_contract), "eos contract does not exist");
 
     require_auth(_self);
 
@@ -14,8 +14,8 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     state_inst.set(new_state, _self);
 }
 
-ACTION Network::setowner(name new_owner) {
-    eosio_assert(is_account(new_owner), "new owner account does not exist");
+ACTION Network::setowner(name owner) {
+    eosio_assert(is_account(owner), "new owner account does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
@@ -23,7 +23,7 @@ ACTION Network::setowner(name new_owner) {
     auto s = state_inst.get();
     require_auth(s.owner);
 
-    s.owner = new_owner;
+    s.owner = owner;
     state_inst.set(s, _self);
 }
 
@@ -59,7 +59,7 @@ ACTION Network::addreserve(name reserve, bool add) {
 }
 
 ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contract, bool add) {
-    eosio_assert(is_account(token_contract), "token contract account does not exist");
+    eosio_assert(is_account(token_contract), "token contract does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
@@ -106,7 +106,7 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
 
 ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
     eosio_assert(is_account(to), "to account does not exist");
-    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
+    eosio_assert(is_account(dest_contract), "dest contract does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
@@ -144,9 +144,10 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     state_inst.set(s, _self);
 }
 
-void Network::trade0(name from, name to, asset src, string memo, state_t &current_state) {
+void Network::trade(name from, name to, asset src, string memo, state_t &state) {
     reentrancy_check(true);
 
+    eosio_assert(state.enabled, "trade not enabled");
     eosio_assert(memo.length() > 0, "needs a memo");
     eosio_assert(src.is_valid(), "invalid transfer");
     eosio_assert(src.amount > 0, "src must be positive");
@@ -164,13 +165,13 @@ void Network::trade0(name from, name to, asset src, string memo, state_t &curren
     reservespert_type reservespert_table_inst(_self, _self.value);
     auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
 
-    info.src_contract = buy ? current_state.eos_contract : token_entry.token_contract;
+    info.src_contract = buy ? state.eos_contract : token_entry.token_contract;
     eosio_assert(_code == info.src_contract, "_code does not match registered eos/token contract.");
 
     info.sender = from;
     info.src = src;
     info.dest = asset(0, buy ? token_symbol : EOS_SYMBOL);
-    info.dest_contract = buy ? token_entry.token_contract : current_state.eos_contract;
+    info.dest_contract = buy ? token_entry.token_contract : state.eos_contract;
 
     search_best_rate(token_entry, info.src);
     SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {info});
@@ -257,8 +258,6 @@ trade_info Network::parse_memo(string memo, symbol &dest_symbol) {
 }
 
 void Network::transfer(name from, name to, asset quantity, string memo) {
-    /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
-    * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
 
     state_type state_inst(_self, _self.value);
@@ -267,14 +266,13 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
         return;
     }
 
-    auto current_state = state_inst.get();
-    if (from == current_state.owner) {
+    auto state = state_inst.get();
+    if (from == state.owner) {
         /* owner can deposit funds, but not trade */
         return;
     } else {
         /* this is a trade */
-        eosio_assert(current_state.enabled, "trade not enabled");
-        trade0(from, to, quantity, memo, current_state);
+        trade(from, to, quantity, memo, state);
         return;
     }
     eosio_assert(false, "unreachable code");

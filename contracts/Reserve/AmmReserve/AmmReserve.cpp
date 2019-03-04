@@ -12,7 +12,7 @@ ACTION AmmReserve::init(name    owner,
     eosio_assert(is_account(owner), "owner account does not exist");
     eosio_assert(is_account(network_contract), "network account does not exist");
     eosio_assert(is_account(token_contract), "token account does not exist");
-    eosio_assert(is_account(eos_contract), "eos contract account does not exist");
+    eosio_assert(is_account(eos_contract), "eos contract does not exist");
 
     require_auth(_self);
 
@@ -59,8 +59,8 @@ ACTION AmmReserve::setparams(double r,
     params_inst.set(new_params, _self);
 }
 
-ACTION AmmReserve::setowner(name new_owner) {
-    eosio_assert(is_account(new_owner), "new owner account does not exist");
+ACTION AmmReserve::setowner(name owner) {
+    eosio_assert(is_account(owner), "new owner account does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
@@ -68,7 +68,7 @@ ACTION AmmReserve::setowner(name new_owner) {
     auto s = state_inst.get();
     require_auth(s.owner);
 
-    s.owner = new_owner;
+    s.owner = owner;
     state_inst.set(s, _self);
 }
 
@@ -121,7 +121,7 @@ ACTION AmmReserve::getconvrate(asset src) {
 
 ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
     eosio_assert(is_account(to), "to account does not exist");
-    eosio_assert(is_account(dest_contract), "dest contract account does not exist");
+    eosio_assert(is_account(dest_contract), "dest contract does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
@@ -132,7 +132,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
 
 double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
     state_type state_inst(_self, _self.value);
-    /* if reserve not ready return gracefully to continue queries in network */
+    /* if reserve not ready return gracefully (store 0 rate) to continue queries in network */
     if (!state_inst.exists()) return 0;
     auto state = state_inst.get();
     if (!state.trade_enabled) return 0;
@@ -165,40 +165,28 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
                  "must come from token contract or eos contract");
 
     eosio_assert(src.is_valid(), "invalid transfer");
-    eosio_assert(src.symbol == EOS_SYMBOL || src.symbol == state.token_symbol,
-                 "unrecognized transfer asset symbol");
+    eosio_assert(src.symbol == EOS_SYMBOL || src.symbol == state.token_symbol, "unrecognized src");
 
     params_type params_inst(_self, _self.value);
     eosio_assert(params_inst.exists(), "params were not set");
     auto params = params_inst.get();
 
-    eosio_assert(memo.length() > 0 , "needs a memo");
     name receiver = name(memo.c_str());
     eosio_assert(receiver != _self, "receiver can not be current contract");
 
-    symbol dest_symbol;
-    name dest_contract;
-    if (src.symbol == EOS_SYMBOL) {
-        dest_symbol = state.token_symbol;
-        dest_contract = state.token_contract;
-    } else {
-        dest_symbol = EOS_SYMBOL;
-        dest_contract = state.eos_contract;
-    }
+    bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
+    symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
+    name dest_contract = buy ? state.token_contract : state.eos_contract;
 
-    /* rate is stored since getconvrate was called beforehand in this tx */
+    /* we assume rate is stored since getconvrate was called beforehand in this tx */
     rate_type rate_inst(_self, _self.value);
     double conversion_rate = rate_inst.get().stored_rate;
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
 
     asset dest;
     calc_dest(conversion_rate, src, dest_symbol, dest);
+    record_fees(params, buy ? dest : src, buy);
 
-    bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
-    asset token = buy ? dest : src;
-    record_fees(params, token, buy);
-
-    /* do trade */
     trans(_self, receiver, dest, dest_contract, "");
 }
 
@@ -218,8 +206,6 @@ void AmmReserve::record_fees(const struct params_t &params, asset token, bool bu
 }
 
 void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
-    /* allow this contract to send funds (by code) and withdraw funds (by owner or self).
-    * after self renounces its authorities only owner can withdraw. */
     if (to != _self) return;
 
     state_type state_inst(_self, _self.value);

@@ -61,7 +61,7 @@ CONTRACT AmmReserve : public contract {
                           double max_sell_rate,
                           double min_sell_rate);
 
-        ACTION setowner(name new_owner);
+        ACTION setowner(name owner);
 
         ACTION setnetwork(name network_contract);
 
