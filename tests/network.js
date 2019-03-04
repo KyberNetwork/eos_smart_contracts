@@ -52,6 +52,7 @@ mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 networkOwnerData.eos = Eos({ keyProvider: networkOwnerData.privateKey /* , verbose: 'false' */})
 
+describe(path.basename(__filename), function () {
 before("setup accounts, contracts and initial funds", async () => {
     /* create accounts */
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:tokenData.account, owner: tokenData.publicKey, active: tokenData.publicKey})});
@@ -578,4 +579,4 @@ describe('as non owner', () => {
     })
     
 });
-
+});

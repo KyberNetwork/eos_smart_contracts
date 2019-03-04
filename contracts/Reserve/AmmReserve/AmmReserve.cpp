@@ -178,15 +178,13 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
     name dest_contract = buy ? state.token_contract : state.eos_contract;
 
-    /* we assume rate is stored since getconvrate was called beforehand in this tx */
+    /* we assume rate and dest are stored since getconvrate was called beforehand in this tx */
     rate_type rate_inst(_self, _self.value);
     double conversion_rate = rate_inst.get().stored_rate;
+    asset dest = rate_inst.get().dest;
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
 
-    asset dest;
-    calc_dest(conversion_rate, src, dest_symbol, dest);
     record_fees(params, buy ? dest : src, buy);
-
     trans(_self, receiver, dest, dest_contract, "");
 }
 

@@ -30,6 +30,12 @@ mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 ownerData.eos = Eos({ keyProvider: ownerData.privateKey /* , verbose: 'false' */})
 
+let reserveAsOwner
+let reserveAsAlice
+let reserveAsReserve
+let reserveAsNetwork
+
+describe(path.basename(__filename), function () {
 before("setup accounts, contracts and initial funds", async () => {
     /* create accounts */
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:tokenData.account, owner: tokenData.publicKey, active: tokenData.publicKey})});
@@ -60,8 +66,12 @@ before("setup accounts, contracts and initial funds", async () => {
         myaccount.issue(aliceData.account,   '40.0000 EOS', 'deposit', {authorization: tokenData.account})
     })
 
+    reserveAsReserve = await reserveData.eos.contract(reserveData.account);
+    reserveAsOwner = await ownerData.eos.contract(reserveData.account);
+    reserveAsAlice = await aliceData.eos.contract(reserveData.account);
+    reserveAsNetwork = await networkData.eos.contract(reserveData.account);
+
     /* init reserve, setparams */
-    const reserveAsReserve = await reserveData.eos.contract(reserveData.account);
     await reserveAsReserve.init({
         owner: ownerData.account,
         network_contract: networkData.account,
@@ -74,7 +84,7 @@ before("setup accounts, contracts and initial funds", async () => {
     /* after init (from reserve contract), renounce permission */
     await renouncePermToOnlyCode(reserveData.eos, reserveData.account)
 
-    const reserveAsOwner = await ownerData.eos.contract(reserveData.account);
+    //reserveAsOwner = await ownerData.eos.contract(reserveData.account);
     await reserveAsOwner.setparams({
         r: "0.01",
         p_min: "0.05",
@@ -84,21 +94,40 @@ before("setup accounts, contracts and initial funds", async () => {
         max_sell_rate: "0.5555",
         min_sell_rate: "0.00000555"
         },{authorization: `${ownerData.account}@active`});
+
 })
 
 describe('As reserve owner', () => {
-
     it('set network', async function() {
-        const reserveAsOwner = await ownerData.eos.contract(reserveData.account);
         await reserveAsOwner.setnetwork({network_contract: networkData.account},{authorization: `${ownerData.account}@active`});
     });
-    xit('enable trade', async function() {});
+    it('enable trade', async function() {
+        await reserveAsOwner.setenable({enable: 1},{authorization: `${ownerData.account}@active`});
+        /*
+        let eos = reserveAsOwner
+        let account = options.account
+        let symbol = options.symbol
+        let tokenContract = options.tokenContract
+
+        let state = await eos.getTableRows({
+            code: tokenContract,
+            scope: account,
+            table: 'accounts',
+            json: true,
+        });
+        for (i = 0; i < balance["rows"].length; i++) {
+            balanceDict = balance["rows"][i]
+            if(balanceDict["balance"] && balanceDict["balance"].includes(symbol)) {
+                return parseFloat(balanceDict["balance"])
+            }
+        }
+        */
+        
+    });
     xit('disable trade', async function() {});
     xit('reset fee', async function() {});
     it('can withdraw funds from reserve', async function() {
         const balanceBefore = await getUserBalance({account:ownerData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
-
-        const reserveAsOwner = await ownerData.eos.contract(reserveData.account);
         await reserveAsOwner.withdraw({
             to:ownerData.account,
             quantity:"23.0000 EOS",
@@ -125,7 +154,6 @@ describe('As reserve owner', () => {
 
 describe('as non reserve owner', () => {
     it('can not set params', async function() {
-        const reserveAsAlice = await aliceData.eos.contract(reserveData.account);
         const p = reserveAsAlice.setparams({
             r: "0.02",
             p_min: "0.05",
@@ -138,15 +166,13 @@ describe('as non reserve owner', () => {
         await ensureContractAssertionError(p, "Missing required authority");
     });
     it('can not set network', async function() {
-        const reserveAsAlice = await aliceData.eos.contract(reserveData.account);
         const p = reserveAsAlice.setnetwork({network_contract: networkData.account},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
     xit('can not enable trade', async function() {});
-    xit('can not disable trade', async function() {});
+    xit('can not set owner', async function() {});
     xit('can not reset fee', async function() {});
     it('can not withdraw funds from reserve', async function() {
-        const reserveAsAlice = await aliceData.eos.contract(reserveData.account);
         const p = reserveAsAlice.withdraw({
             to:ownerData.account,
             quantity:"23.0000 EOS",
@@ -165,8 +191,8 @@ describe('as non reserve owner', () => {
 describe('As network', () => {
     it('get buy rate with 0 quantity', async function() {
         /* get rate from blockchain. */
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "0.0000 EOS"},{authorization: `${networkData.account}@active`});
+        const reserveAsNetwork = await networkData.eos.contract(reserveData.account);
+        await reserveAsNetwork.getconvrate({src: "0.0000 EOS"},{authorization: `${networkData.account}@active`});
         let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
 
         /* calc expected rate offline*/
@@ -175,8 +201,7 @@ describe('As network', () => {
     });
     it('get buy rate with non 0 quantity', async function() {
         /* get rate from blockchain. */
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "4.7611 EOS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "4.7611 EOS"},{authorization: `${networkData.account}@active`});
         let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
 
         /* calc expected rate offline*/
@@ -185,8 +210,7 @@ describe('As network', () => {
     });
     it('get sell rate with 0 quantity', async function() {
         /* get rate from blockchain. */
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "0.0000 SYS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "0.0000 SYS"},{authorization: `${networkData.account}@active`});
         let rate = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
 
         /* calc expected rate offline*/
@@ -195,8 +219,7 @@ describe('As network', () => {
     });
     it('get sell rate with non 0 quantity', async function() {
         /* get rate from blockchain. */
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "34.211 SYS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "34.211 SYS"},{authorization: `${networkData.account}@active`});
         let rate = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
 
         /* calc expected rate offline*/
@@ -210,8 +233,7 @@ describe('As network', () => {
 
         const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
 
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "2.3110 EOS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "2.3110 EOS"},{authorization: `${networkData.account}@active`});
         const token = await networkData.eos.contract(tokenData.account);
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"2.3110 EOS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
@@ -228,8 +250,7 @@ describe('As network', () => {
 
         const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "34.2110 SYS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "34.2110 SYS"},{authorization: `${networkData.account}@active`});
         const token = await networkData.eos.contract(tokenData.account);
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"34.2110 SYS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
@@ -240,8 +261,7 @@ describe('As network', () => {
     });
     it('buy with rate > max_buy_rate', async function() {
         /* get rate from blockchain. */
-        const reserve = await networkData.eos.contract(reserveData.account);
-        await reserve.getconvrate({src: "4.7611 EOS"},{authorization: `${networkData.account}@active`});
+        await reserveAsNetwork.getconvrate({src: "4.7611 EOS"},{authorization: `${networkData.account}@active`});
         let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
 
         /* calc expected rate offline*/
@@ -253,18 +273,16 @@ describe('As network', () => {
     xit('sell with rate < min_buy_rate', async function() {});
     xit('fee is kept on buy', async function() {});
     xit('fee is kept on sell', async function() {});
-
+    xit('fees are recorded on buy', async function() {});
+    xit('fees are recorded on sell', async function() {});
     
 });
 
 describe('As non network', () => {
-    /* we currently indeed allow it:
-    it('can not get conversion rate', async function() {
-        const reserve = await aliceData.eos.contract(reserveData.account);
-        const p = reserve.getconvrate({src: "0.0000 EOS"},{authorization: `${aliceData.account}@active`});
+    xit('can get conversion rate', async function() {
+        const p = reserveAsAlice.getconvrate({src: "0.0000 EOS"},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
-    */
 })
 
 describe('As reserve', () => {
@@ -272,4 +290,5 @@ describe('As reserve', () => {
         const p = reserveData.eos.setcode(reserveData.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
         await ensureContractAssertionError(p, "Provided keys, permissions, and delays do not satisfy declared authorizations");
     });
+});
 });
