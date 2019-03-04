@@ -26,14 +26,7 @@ struct account {
     asset    balance;
     uint64_t primary_key() const { return balance.symbol.code().raw(); }
 };
-
-struct rate_t {
-    double     stored_rate;
-    asset      dest;
-};
-
 typedef eosio::multi_index<"accounts"_n, account> accounts;
-typedef eosio::singleton<"rate"_n, rate_t> rate_type;
 
 asset get_balance(name user, name token_contract, symbol symbol) {
     accounts fromAcc(token_contract, user.value);

@@ -10,7 +10,7 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state_t new_state = {owner, eos_contract, enable, false, 0};
+    state_t new_state = {owner, eos_contract, enable, false};
     state_inst.set(new_state, _self);
 }
 
@@ -145,15 +145,18 @@ ACTION Network::getexprate(asset src, symbol dest_symbol) {
 ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     require_auth(_self);  // can only be called internally
 
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+
     double best_rate = 0;
     name best_reserve;
     get_best_rate_results(src, dest_symbol, best_rate, best_reserve);
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    auto s = state_inst.get();
-    s.expected_rate = best_rate;
-    state_inst.set(s, _self);
+    asset dest;
+    calc_dest(best_rate, src, dest_symbol, dest);
+
+    rate_type rate_inst(_self, _self.value);
+    rate_inst.set({best_rate, dest}, _self);
 }
 
 void Network::trade(name from, name to, asset src, string memo, state_t &state) {

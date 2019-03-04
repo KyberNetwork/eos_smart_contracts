@@ -29,7 +29,6 @@ CONTRACT Network : public contract {
             name        eos_contract;
             bool        enabled;
             bool        during_trade;
-            double      expected_rate;
         };
 
         TABLE reserve_t {
@@ -51,11 +50,18 @@ CONTRACT Network : public contract {
             uint64_t        primary_key() const { return token_counter.symbol.raw(); }
         };
 
+        TABLE rate_t {
+            double      stored_rate;
+            asset       dest;
+        };
+
         typedef eosio::singleton<"state"_n, state_t> state_type;
         typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
         typedef eosio::multi_index<"reserve"_n, reserve_t> reserves_type;
         typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
         typedef eosio::multi_index<"tokenstats"_n, tokenstats_t> tokenstats_type;
+        typedef eosio::singleton<"rate"_n, rate_t> rate_type;
+        typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi;
 
         ACTION init(name owner, name eos_contract, bool enable);
 
