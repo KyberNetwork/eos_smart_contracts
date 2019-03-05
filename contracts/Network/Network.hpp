@@ -77,10 +77,13 @@ CONTRACT Network : public contract {
 
         ACTION getexprate(asset src, symbol dest_symbol);
 
+        /* internal */
         ACTION storeexprate(asset src, symbol dest_symbol);
 
+        /* internal */
         ACTION trade1(trade_info info);
 
+        /* internal */
         ACTION trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre);
 
         void transfer(name from, name to, asset quantity, string memo);

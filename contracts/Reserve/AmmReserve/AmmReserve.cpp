@@ -111,6 +111,9 @@ ACTION AmmReserve::getconvrate(asset src) {
     double rate;
     asset dest;
 
+    eosio_assert(src.is_valid(), "src amount");
+    eosio_assert(src.amount > 0, "src amount must be positive");
+
     rate = reserve_get_conv_rate(src, dest);
     if (!rate) dest = asset();
 
@@ -165,6 +168,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
                  "must come from token contract or eos contract");
 
     eosio_assert(src.is_valid(), "invalid transfer");
+    eosio_assert(src.amount > 0, "src amount must be positive");
     eosio_assert(src.symbol == EOS_SYMBOL || src.symbol == state.token_symbol, "unrecognized src");
 
     params_type params_inst(_self, _self.value);
