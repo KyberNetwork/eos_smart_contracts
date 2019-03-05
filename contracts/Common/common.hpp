@@ -16,11 +16,8 @@ using namespace eosio;
 
 #define EOS_PRECISION 4
 #define EOS_SYMBOL symbol("EOS", EOS_PRECISION)
-#define MAX_RATE 100000 /* up to 1M tokens per EOS */
-
-/* 2^62 - 1 is max amount in asset.
- * We want any amount to be multiply-able by 10^4 ~= 2^14 and still be lower. */
-#define MAX_AMOUNT ((1LL << (62-14)) - 1)
+#define MAX_AMOUNT asset::max_amount
+#define MAX_RATE 1000000 /* up to 1M tokens per EOS */
 
 struct account {
     asset    balance;
@@ -84,27 +81,25 @@ float stof(const char* s) {
     return rez * fact;
 }
 
+int64_t to_int64(double x) {
+    eosio_assert(x <= MAX_AMOUNT, "fail max amount overflow validation");
+    return int64_t(x);
+}
+
 double amount_to_damount(int64_t amount, uint64_t precision) {
     return (double(amount) / double(pow(10, precision)));
-}
-
-int64_t damount_to_amount(double damount, uint64_t precision) {
-    eosio_assert(damount < MAX_AMOUNT, "fail overflow validation");
-    return int64_t(damount * double(pow(10, precision)));
-}
-
-int64_t damount_to_ceil_amount(double damount, uint64_t precision) {
-    eosio_assert(damount < MAX_AMOUNT, "fail overflow validation");
-    return int64_t(ceil(damount * double(pow(10, precision))));
 }
 
 double asset_to_damount(asset quantity) {
     return (double(quantity.amount) / double(pow(10, quantity.symbol.precision())));
 }
 
+int64_t damount_to_amount(double damount, uint64_t precision) {
+    return to_int64(damount * double(pow(10, precision)));
+}
+
 void calc_dest(double rate, asset src, symbol dest_symbol, asset &dest) {
     double src_damount = amount_to_damount(src.amount, src.symbol.precision());
-    eosio_assert(src_damount < MAX_AMOUNT, "fail overflow validation");
     double dest_damount = src_damount * rate;
     int64_t dest_amount = damount_to_amount(dest_damount, dest_symbol.precision());
 

@@ -112,7 +112,7 @@ ACTION AmmReserve::getconvrate(asset src) {
     asset dest;
 
     eosio_assert(src.is_valid(), "src amount");
-    eosio_assert(src.amount > 0, "src amount must be positive");
+    eosio_assert(src.amount >= 0, "src amount can not be negative");
 
     rate = reserve_get_conv_rate(src, dest);
     if (!rate) dest = asset();
@@ -187,14 +187,13 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
     double conversion_rate = rate_inst.get().stored_rate;
     asset dest = rate_inst.get().dest;
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
+    eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
     record_fees(params, buy ? dest : src, buy);
     trans(_self, receiver, dest, dest_contract, "");
 }
 
 void AmmReserve::record_fees(const struct params_t &params, asset token, bool buy) {
-    /* require(val <= MAX_QTY); */
-
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
     double dfee = buy ? (token_damount * params.fee_percent / (100.0 - params.fee_percent)) :
                         (token_damount * params.fee_percent) / 100.0;

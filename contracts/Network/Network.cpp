@@ -129,7 +129,7 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract) {
 
 ACTION Network::getexprate(asset src, symbol dest_symbol) {
     eosio_assert(src.is_valid(), "invalid transfer");
-    eosio_assert(src.amount > 0, "src amount must be positive");
+    eosio_assert(src.amount >= 0, "src amount can not be negative");
 
     eosio_assert(src.symbol == EOS_SYMBOL || dest_symbol == EOS_SYMBOL, "src or dest must be EOS");
     eosio_assert(src.symbol != dest_symbol, "src symbol can not equal dest symbol");
@@ -200,6 +200,7 @@ ACTION Network::trade1(trade_info info) {
     get_best_rate_results(info.src, info.dest.symbol, best_rate, best_reserve);
     eosio_assert(best_rate != 0, "got 0 rate.");
     eosio_assert(best_rate >= info.min_conversion_rate, "rate < min conversion rate.");
+    eosio_assert(best_rate <= MAX_RATE, "rate > max rate.");
 
     asset dest;
     calc_dest(best_rate, info.src, info.dest.symbol, dest);

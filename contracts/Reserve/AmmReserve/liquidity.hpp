@@ -23,33 +23,37 @@ struct liq_params {
 
 double p_of_e(const struct liq_params *params, double e) {
     return params->p_min * exp(params->r * e);
+    // if overflow can return inf
 }
 
 double delta_t_func(const struct liq_params *params, double e, double delta_e) {
     return (-1) *
            ((exp(-params->r * delta_e) - 1.0) /
             (params->r * p_of_e(params, e)));
+    // if overflow can return either inf or 0
 }
 
 double delta_e_func(const struct liq_params *params, double e, double delta_t) {
     return ((log(1 + params->r * p_of_e(params, e) * delta_t)) / params->r);
+    // if overflow can return inf
 }
 
 double value_after_reducing_fee(const struct liq_params *params, double val) {
-    eosio_assert(val < MAX_AMOUNT, "fail overflow validation");
     return ((100.0 - params->fee_percent) * val) / 100.0;
+    // if overflow can return inf
 }
 
 double buy_rate(const struct liq_params *params, double e, double delta_e) {
-    double delta_t = delta_t_func(params, e, delta_e);
-    /* require(deltaTInFp <= maxQtyInFp); - covered by asset limits */
+    double delta_t = delta_t_func(params, e, delta_e);  // if overflow can return either inf or 0
     delta_t = value_after_reducing_fee(params, delta_t);
     return delta_t / delta_e;
+    // if overflow can return either inf or 0
 }
 
 double buy_rate_zero_quantity(const struct liq_params *params, double e) {
     double rate_pre_reduction = 1 / p_of_e(params, e);
     return value_after_reducing_fee(params, rate_pre_reduction);
+    // if overflow can return either inf or 0
 }
 
 double sell_rate(const struct liq_params *params,
@@ -59,14 +63,18 @@ double sell_rate(const struct liq_params *params,
                  double &delta_e) {
     delta_e = delta_e_func(params, e, delta_t);
     return delta_e / sell_input_qty;
+    // if overflow can return either inf or 0
 }
 
 double sell_rate_zero_quantity(const struct liq_params *params, double e) {
     double rate_pre_reduction = p_of_e(params, e);
     return value_after_reducing_fee(params, rate_pre_reduction);
+    // if overflow can return either inf or 0
 }
 
 double rate_after_validation(const struct liq_params *params, double rate, bool buy) {
+    if (rate == INFINITY) return 0;
+
     double min_allowed_rate = buy ? params->min_buy_rate : params->min_sell_rate;
     double max_allowed_rate = buy ? params->max_buy_rate : params->max_sell_rate;
 
