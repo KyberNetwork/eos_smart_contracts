@@ -164,8 +164,10 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
 void AmmReserve::trade(name from, asset src, string memo, name code, state_t &state) {
     eosio_assert(state.trade_enabled, "trade disabled");
     eosio_assert(from == state.network_contract, "only network can perform a trade");
-    eosio_assert(code == state.token_contract || code == state.eos_contract,
-                 "must come from token contract or eos contract");
+    bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
+
+    name expected_src_contract = buy ? state.eos_contract : state.token_contract;
+    eosio_assert(code == expected_src_contract, "wrong src contract");
 
     eosio_assert(src.is_valid(), "invalid transfer");
     eosio_assert(src.amount > 0, "src amount must be positive");
@@ -178,7 +180,6 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
     name receiver = name(memo.c_str());
     eosio_assert(receiver != _self, "receiver can not be current contract");
 
-    bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
     name dest_contract = buy ? state.token_contract : state.eos_contract;
 
