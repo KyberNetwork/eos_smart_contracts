@@ -24,44 +24,42 @@ CONTRACT Network : public contract {
     public:
         using contract::contract;
 
-        TABLE state_t {
+        TABLE state {
             name        owner;
             name        eos_contract;
             bool        enabled;
             bool        during_trade;
         };
 
-        TABLE reserve_t {
+        TABLE reserve {
             name        contract;
             uint64_t    primary_key() const { return contract.value; }
         };
 
-        TABLE reservespert_t {
+        TABLE reservespert {
             symbol          symbol;
             name            token_contract;
             vector<name>    reserve_contracts;
             uint64_t        primary_key() const { return symbol.raw(); }
         };
 
-        TABLE tokenstats_t {
+        TABLE tokenstats {
             asset           token_counter;
             asset           eos_counter;
             time_point_sec  reset_time;
             uint64_t        primary_key() const { return token_counter.symbol.raw(); }
         };
 
-        TABLE rate_t {
+        TABLE rate {
             double      stored_rate;
             asset       dest;
         };
 
-        typedef eosio::singleton<"state"_n, state_t> state_type;
-        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
-        typedef eosio::multi_index<"reserve"_n, reserve_t> reserves_type;
-        typedef eosio::multi_index<"reservespert"_n, reservespert_t> reservespert_type;
-        typedef eosio::multi_index<"tokenstats"_n, tokenstats_t> tokenstats_type;
-        typedef eosio::singleton<"rate"_n, rate_t> rate_type;
-        typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi;
+        typedef eosio::singleton<"state"_n, state> state_type;
+        typedef eosio::multi_index<"reserve"_n, reserve> reserves_type;
+        typedef eosio::multi_index<"reservespert"_n, reservespert> reservespert_type;
+        typedef eosio::multi_index<"tokenstats"_n, tokenstats> tokenstats_type;
+        typedef eosio::singleton<"rate"_n, rate> rate_type;
 
         ACTION init(name owner, name eos_contract, bool enable);
 
@@ -89,9 +87,9 @@ CONTRACT Network : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        void trade(name from, name to, asset src, string memo, state_t &current_state);
+        void trade(name from, name to, asset src, string memo, state &current_state);
 
-        void search_best_rate(reservespert_t &token_entry, asset src);
+        void search_best_rate(reservespert &token_entry, asset src);
 
         void get_best_rate_results(asset src, symbol dest_symbol, double &rate, name &reserve);
 

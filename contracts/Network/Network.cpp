@@ -10,7 +10,7 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state_t new_state = {owner, eos_contract, enable, false};
+    state new_state = {owner, eos_contract, enable, false};
     state_inst.set(new_state, _self);
 }
 
@@ -159,7 +159,7 @@ ACTION Network::storeexprate(asset src, symbol dest_symbol) {
     rate_inst.set({best_rate, dest}, _self);
 }
 
-void Network::trade(name from, name to, asset src, string memo, state_t &state) {
+void Network::trade(name from, name to, asset src, string memo, state &state) {
     reentrancy_check(true);
 
     eosio_assert(state.enabled, "trade not enabled");
@@ -237,7 +237,7 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
     reentrancy_check(false);
 } /* end of trade process */
 
-void Network::search_best_rate(reservespert_t &token_entry, asset src) {
+void Network::search_best_rate(reservespert &token_entry, asset src) {
     /* get rates from all reserves that hold the pair */
     for (int i = 0; i < token_entry.reserve_contracts.size(); i++) {
         auto reserve = token_entry.reserve_contracts[i];

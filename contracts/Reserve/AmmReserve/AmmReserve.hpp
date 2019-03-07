@@ -11,7 +11,7 @@ CONTRACT AmmReserve : public contract {
     public:
         using contract::contract;
 
-        TABLE state_t {
+        TABLE state {
             name        owner;
             name        network_contract;
             symbol      token_symbol;
@@ -21,7 +21,7 @@ CONTRACT AmmReserve : public contract {
             asset       collected_fees_in_tokens;
         };
 
-        TABLE params_t {
+        TABLE params {
             double      r;
             double      p_min;
             asset       max_eos_cap_buy;
@@ -34,17 +34,14 @@ CONTRACT AmmReserve : public contract {
         };
 
         /* TODO: the following is duplicated with common.hpp, see if can remove from here. */
-        TABLE rate_t {
+        TABLE rate {
             double      stored_rate;
             asset       dest;
         };
 
-        typedef eosio::singleton<"state"_n, state_t> state_type;
-        typedef eosio::multi_index<"state"_n, state_t> dummy_state_for_abi;
-        typedef eosio::singleton<"params"_n, params_t> params_type;
-        typedef eosio::multi_index<"params"_n, params_t> dummy_params_for_abi;
-        typedef eosio::singleton<"rate"_n, rate_t> rate_type;
-        typedef eosio::multi_index<"rate"_n, rate_t> dummy_rate_for_abi;
+        typedef eosio::singleton<"state"_n, state> state_type;
+        typedef eosio::singleton<"params"_n, params> params_type;
+        typedef eosio::singleton<"rate"_n, rate> rate_type;
 
         ACTION init(name    owner,
                     name    network_contract,
@@ -78,8 +75,8 @@ CONTRACT AmmReserve : public contract {
     private:
         double reserve_get_conv_rate(asset src, asset &dest);
 
-        void trade(name from, asset src, string memo, name code, state_t &state);
+        void trade(name from, asset src, string memo, name code, state &state);
 
-        void record_fees(const struct params_t &params, asset token, bool buy);
+        void record_fees(const struct params &params, asset token, bool buy);
 };
 

@@ -19,7 +19,7 @@ ACTION AmmReserve::init(name    owner,
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state_t new_state;
+    state new_state;
     new_state.owner = owner;
     new_state.network_contract = network_contract;
     new_state.token_symbol = token_symbol;
@@ -46,7 +46,7 @@ ACTION AmmReserve::setparams(double r,
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
 
     params_type params_inst(_self, _self.value);
-    params_t new_params;
+    params new_params;
     new_params.r = r;
     new_params.p_min = p_min;
     new_params.max_eos_cap_buy = max_eos_cap_buy;
@@ -108,17 +108,17 @@ ACTION AmmReserve::resetfee() {
 }
 
 ACTION AmmReserve::getconvrate(asset src) {
-    double rate;
+    double rate_result;
     asset dest;
 
     eosio_assert(src.is_valid(), "src amount");
     eosio_assert(src.amount >= 0, "src amount can not be negative");
 
-    rate = reserve_get_conv_rate(src, dest);
-    if (!rate) dest = asset();
+    rate_result = reserve_get_conv_rate(src, dest);
+    if (!rate_result) dest = asset();
 
     rate_type rate_inst(_self, _self.value);
-    rate_t s = {rate, dest};
+    rate s = {rate_result, dest};
     rate_inst.set(s, _self);
 }
 
@@ -161,7 +161,7 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
     return rate;
 }
 
-void AmmReserve::trade(name from, asset src, string memo, name code, state_t &state) {
+void AmmReserve::trade(name from, asset src, string memo, name code, state &state) {
     eosio_assert(state.trade_enabled, "trade disabled");
     eosio_assert(from == state.network_contract, "only network can perform a trade");
     bool buy = (src.symbol == EOS_SYMBOL) ? true : false;
@@ -194,7 +194,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state_t &st
     trans(_self, receiver, dest, dest_contract, "");
 }
 
-void AmmReserve::record_fees(const struct params_t &params, asset token, bool buy) {
+void AmmReserve::record_fees(const struct params &params, asset token, bool buy) {
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
     double dfee = buy ? (token_damount * params.fee_percent / (100.0 - params.fee_percent)) :
                         (token_damount * params.fee_percent) / 100.0;
