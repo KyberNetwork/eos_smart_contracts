@@ -38,7 +38,7 @@ let reserveAsReserve
 let reserveAsNetwork
 let token
 
-let defaultParams;
+let defaultParams
 
 describe(path.basename(__filename), function () {
 before("setup accounts, contracts and initial funds", async () => {
