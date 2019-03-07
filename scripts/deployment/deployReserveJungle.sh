@@ -50,7 +50,7 @@ $jleos system delegatebw $MOSHE_ACCOUNT   $MOSHE_ACCOUNT   "1.0 EOS" "1.0 EOS"
 
 #deploy token
 $jleos system buyram $ACCOUNT_NAME $TOKEN_ACCOUNT --kbytes 200
-$jleos set contract $TOKEN_ACCOUNT contracts/Token Token.wasm --abi Token.abi -p $TOKEN_ACCOUNT@active
+$jleos set contract $TOKEN_ACCOUNT contracts/Mock/Token Token.wasm --abi Token.abi -p $TOKEN_ACCOUNT@active
 
 #move some SYS to the accounts
 $jleos push action $TOKEN_ACCOUNT create "[ \"$TOKEN_ACCOUNT\", \"1000000000.0000 SYS\"]" -p $TOKEN_ACCOUNT@active

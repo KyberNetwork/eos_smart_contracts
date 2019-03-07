@@ -102,10 +102,10 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkOwnerData.account, owner: networkOwnerData.publicKey, active: networkOwnerData.publicKey})});
 
     /* deploy contracts */
-    await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Token/Token.wasm`));
-    await tokenData.eos.setabi(tokenData.account, JSON.parse(fs.readFileSync(`contracts/Token/Token.abi`)))
-    await mockTokenData.eos.setcode(mockTokenData.account, 0, 0, fs.readFileSync(`contracts/Token/Token.wasm`));
-    await mockTokenData.eos.setabi(mockTokenData.account, JSON.parse(fs.readFileSync(`contracts/Token/Token.abi`)))
+    await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
+    await tokenData.eos.setabi(tokenData.account, JSON.parse(fs.readFileSync(`contracts/Mock/Token/Token.abi`)))
+    await mockTokenData.eos.setcode(mockTokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
+    await mockTokenData.eos.setabi(mockTokenData.account, JSON.parse(fs.readFileSync(`contracts/Mock/Token/Token.abi`)))
     await reserve1Data.eos.setcode(reserve1Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
     await reserve1Data.eos.setabi(reserve1Data.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
     await reserve2Data.eos.setcode(reserve2Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));

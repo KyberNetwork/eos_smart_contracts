@@ -21,8 +21,8 @@ cleos create account eosio reserve3 $PUBLIC_KEY
 cleos create account eosio alice $PUBLIC_KEY
 cleos create account eosio moshe $PUBLIC_KEY
 
-cleos set contract eosio.token contracts/Token Token.wasm --abi Token.abi -p eosio.token@active
-cleos set contract other.token contracts/Token Token.wasm --abi Token.abi -p other.token@active
+cleos set contract eosio.token contracts/Mock/Token Token.wasm --abi Token.abi -p eosio.token@active -f
+cleos set contract other.token contracts/Mock/Token Token.wasm --abi Token.abi -p other.token@active
 
 #spread initial funds
 cleos push action eosio.token create '[ "eosio", "1000000000.0000 SYS"]' -p eosio.token@active

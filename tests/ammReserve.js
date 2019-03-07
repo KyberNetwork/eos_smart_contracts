@@ -51,8 +51,8 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:ownerData.account, owner: ownerData.publicKey, active: ownerData.publicKey})});
 
     /* deploy contracts */
-    await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Token/Token.wasm`));
-    await tokenData.eos.setabi(tokenData.account, JSON.parse(fs.readFileSync(`contracts/Token/Token.abi`)))
+    await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
+    await tokenData.eos.setabi(tokenData.account, JSON.parse(fs.readFileSync(`contracts/Mock/Token/Token.abi`)))
     await reserveData.eos.setcode(reserveData.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
     await reserveData.eos.setabi(reserveData.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
     //await addCodeToPerm(reserveData.eos, reserveData.account)
