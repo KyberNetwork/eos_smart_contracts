@@ -15,6 +15,7 @@ const RATE_PRECISON =   0.00000001
 /* Assign keypairs. to accounts. Use unique name prefixes to prevent collisions between test modules. */
 const keyPairArray = JSON.parse(fs.readFileSync("tests/keys.json"))
 const tokenData =         {account: "nettoken",   publicKey: keyPairArray[0][0], privateKey: keyPairArray[0][1]}
+const mockTokenData =     {account: "netmocktoken",   publicKey: keyPairArray[0][0], privateKey: keyPairArray[0][1]}
 
 const reserve1Data =      {account: "netreserve1", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve1OwnerData = {account: "netowner1",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
@@ -40,6 +41,7 @@ const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVP
 /* create eos handler objects */
 systemData.eos = Eos({ keyProvider: systemData.privateKey /* , verbose: 'false' */})
 tokenData.eos = Eos({ keyProvider: tokenData.privateKey /* , verbose: 'false' */})
+mockTokenData.eos = Eos({ keyProvider: tokenData.privateKey /* , verbose: 'false' */})
 reserve1Data.eos = Eos({ keyProvider: reserve1Data.privateKey /* , verbose: 'false' */})
 reserve1OwnerData.eos = Eos({ keyProvider: reserve1OwnerData.privateKey /* , verbose: 'false' */})
 reserve2Data.eos = Eos({ keyProvider: reserve2Data.privateKey /* , verbose: 'false' */})
@@ -80,6 +82,7 @@ describe(path.basename(__filename), function () {
 before("setup accounts, contracts and initial funds", async () => {
     /* create accounts */
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:tokenData.account, owner: tokenData.publicKey, active: tokenData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:mockTokenData.account, owner: mockTokenData.publicKey, active: mockTokenData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve1Data.account, owner: reserve1Data.publicKey, active: reserve1Data.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve2Data.account, owner: reserve2Data.publicKey, active: reserve2Data.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve3Data.account, owner: reserve3Data.publicKey, active: reserve3Data.publicKey})});
@@ -101,6 +104,8 @@ before("setup accounts, contracts and initial funds", async () => {
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Token/Token.wasm`));
     await tokenData.eos.setabi(tokenData.account, JSON.parse(fs.readFileSync(`contracts/Token/Token.abi`)))
+    await mockTokenData.eos.setcode(mockTokenData.account, 0, 0, fs.readFileSync(`contracts/Token/Token.wasm`));
+    await mockTokenData.eos.setabi(mockTokenData.account, JSON.parse(fs.readFileSync(`contracts/Token/Token.abi`)))
     await reserve1Data.eos.setcode(reserve1Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
     await reserve1Data.eos.setabi(reserve1Data.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
     await reserve2Data.eos.setcode(reserve2Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
@@ -167,8 +172,16 @@ before("setup accounts, contracts and initial funds", async () => {
     })
 
     await tokenData.eos.transaction(tokenData.account, myaccount => {
-        myaccount.create(tokenData.account, '100000000.0000 MOCK', {authorization: tokenData.account})
-        myaccount.issue(aliceData.account, '1000.0000 MOCK', 'deposit', {authorization: tokenData.account})
+        myaccount.create(tokenData.account, '100000000.0000 MOCKA', {authorization: tokenData.account})
+        myaccount.issue(aliceData.account, '1000.0000 MOCKA', 'deposit', {authorization: tokenData.account})
+    })
+
+    await mockTokenData.eos.transaction(mockTokenData.account, myaccount => {
+        myaccount.create(mockTokenData.account, '100000000.0000 EOS', {authorization: mockTokenData.account})
+        myaccount.issue(aliceData.account, '1000.0000 EOS', 'deposit', {authorization: mockTokenData.account})
+        myaccount.create(mockTokenData.account, '100000000.0000 SYS', {authorization: mockTokenData.account})
+        myaccount.issue(aliceData.account, '1000.0000 SYS', 'deposit', {authorization: mockTokenData.account})
+
     })
 
     await tokenData.eos.transaction(tokenData.account, myaccount => {
@@ -480,7 +493,7 @@ describe('as non owner', () => {
             const p = networkAsAlice.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:aliceData.account}, {authorization: `${aliceData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
-        xit('can not withdraw', async function() {
+        it('can not withdraw', async function() {
             const p = networkAsAlice.withdraw({
                 to:aliceData.account,
                 quantity:"5.0000 EOS",
@@ -608,20 +621,32 @@ describe('as non owner', () => {
             const p = token.transfer({
                 from:aliceData.account,
                 to:networkData.account,
-                quantity:"5.0000 MOCK",
+                quantity:"5.0000 MOCKA",
                 memo:"4 EOS," + mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unlisted token");
         })
         it('trade from unknown token contract with registered token symbol', async function() {
-            
+            const mockToken = await aliceData.eos.contract(mockTokenData.account);
+            const p = mockToken.transfer({
+                from:aliceData.account,
+                to:networkData.account,
+                quantity:"5.0000 SYS",
+                memo:"4 EOS," + mosheData.account + ",0.000001"},
+                {authorization: [`${aliceData.account}@active`]});
+            await ensureContractAssertionError(p, "_code does not match registered eos/token contract");
         })
         it('trade from unknown eos contract with registered eos symbol', async function() {
-            
+            const mockToken = await aliceData.eos.contract(mockTokenData.account);
+            const p = mockToken.transfer({
+                from:aliceData.account,
+                to:networkData.account,
+                quantity:"5.0000 EOS",
+                memo:"4 SYS," + mosheData.account + ",0.000001"},
+                {authorization: [`${aliceData.account}@active`]});
+            await ensureContractAssertionError(p, "_code does not match registered eos/token contract");
         })
-        
-        
-        //////////////////
+
         describe('using services', () => {
         it('buy token with precision 4', async function() {
             const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
