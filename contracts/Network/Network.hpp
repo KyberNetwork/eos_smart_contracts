@@ -46,7 +46,6 @@ CONTRACT Network : public contract {
         TABLE tokenstats {
             asset           token_counter;
             asset           eos_counter;
-            time_point_sec  reset_time;
             uint64_t        primary_key() const { return token_counter.symbol.raw(); }
         };
 
@@ -71,7 +70,7 @@ CONTRACT Network : public contract {
 
         ACTION listpairres(name reserve, symbol token_symbol, name token_contract, bool add);
 
-        ACTION withdraw(name to, asset quantity, name dest_contract);
+        ACTION withdraw(name to, asset quantity, name dest_contract, string memo);
 
         ACTION getexprate(asset src, symbol dest_symbol);
 
@@ -95,5 +94,7 @@ CONTRACT Network : public contract {
 
         void reentrancy_check(bool enter);
 
-        trade_info parse_memo(string memo, symbol &dest_symbol);
+        void parse_memo(string memo, trade_info &info);
+
+        trade_info create_trade_info(string memo, name from, asset src, name _code);
 };

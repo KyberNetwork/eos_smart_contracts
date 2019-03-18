@@ -310,7 +310,7 @@ describe('As owner', () => {
         })
         it('withdraw', async function() {
             const balanceBefore = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
-            await networkAsOwner.withdraw({to:networkOwnerData.account, quantity:"5.0000 EOS", dest_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsOwner.withdraw({to:networkOwnerData.account, quantity:"5.0000 EOS", dest_contract:tokenData.account, memo:""},{authorization: `${networkOwnerData.account}@active`});
             const balanceAfter = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceBefore - balanceAfter 
             balanceChange.should.be.closeTo(5.0000, AMOUNT_PRECISON);
@@ -497,7 +497,8 @@ describe('as non owner', () => {
             const p = networkAsAlice.withdraw({
                 to:aliceData.account,
                 quantity:"5.0000 EOS",
-                dest_contract:tokenData.account
+                dest_contract:tokenData.account,
+                memo:""
                 },{authorization: `${aliceData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
@@ -579,7 +580,7 @@ describe('as non owner', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
 
             tokenStatsAfter = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
@@ -606,7 +607,7 @@ describe('as non owner', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + mosheData.account + ",100.000000"},
+                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",100.000000"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "rate < min conversion rate");
         })
@@ -622,7 +623,7 @@ describe('as non owner', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 MOCKA",
-                memo:"4 EOS," + mosheData.account + ",0.000001"},
+                memo:"4 EOS,"  + tokenData.account + "," + mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unlisted token");
         })
@@ -632,9 +633,9 @@ describe('as non owner', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 SYS",
-                memo:"4 EOS," + mosheData.account + ",0.000001"},
+                memo:"4 EOS," + tokenData.account + "," +  mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
-            await ensureContractAssertionError(p, "_code does not match registered eos/token contract");
+            await ensureContractAssertionError(p, "unexpected src contract");
         })
         it('trade from unknown eos contract with registered eos symbol', async function() {
             const mockToken = await aliceData.eos.contract(mockTokenData.account);
@@ -642,9 +643,9 @@ describe('as non owner', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
-            await ensureContractAssertionError(p, "_code does not match registered eos/token contract");
+            await ensureContractAssertionError(p, "unexpected src contract");
         })
 
         describe('using services', () => {
@@ -666,6 +667,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"2.0132",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"EOS",
                 destPrecision:4,
                 destSymbol:"SYS",
@@ -695,6 +697,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"1.3678",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"SYS",
                 destPrecision:4,
                 destSymbol:"EOS",
@@ -725,6 +728,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:1.1134,
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"EOS",
                 destPrecision:3,
                 destSymbol:"TOKA",
@@ -755,6 +759,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"1.367",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"TOKA",
                 destPrecision:4,
                 destSymbol:"EOS",
@@ -786,6 +791,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:1.1103,
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"EOS",
                 destPrecision:2,
                 destSymbol:"TOKB",
@@ -815,6 +821,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"2.31",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"TOKB",
                 destPrecision:4,
                 destSymbol:"EOS",
@@ -845,6 +852,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:3.7107,
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"EOS",
                 destPrecision:1,
                 destSymbol:"TOKC",
@@ -874,6 +882,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"3.9",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"TOKC",
                 destPrecision:4,
                 destSymbol:"EOS",
@@ -904,6 +913,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:3.7107,
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"EOS",
                 destPrecision:0,
                 destSymbol:"TOKD",
@@ -933,6 +943,7 @@ describe('as non owner', () => {
                 userAccount:aliceData.account, 
                 srcAmount:"4",
                 srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
                 srcSymbol:"TOKD",
                 destPrecision:4,
                 destSymbol:"EOS",

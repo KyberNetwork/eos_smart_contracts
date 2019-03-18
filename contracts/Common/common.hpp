@@ -98,10 +98,10 @@ int64_t damount_to_amount(double damount, uint64_t precision) {
     return to_int64(damount * double(pow(10, precision)));
 }
 
-void calc_dest(double rate, asset src, symbol dest_symbol, asset &dest) {
+asset calc_dest(double rate, asset src, symbol dest_symbol) {
     double src_damount = amount_to_damount(src.amount, src.symbol.precision());
     double dest_damount = src_damount * rate;
     int64_t dest_amount = damount_to_amount(dest_damount, dest_symbol.precision());
 
-    dest = asset(dest_amount, dest_symbol);
+    return asset(dest_amount, dest_symbol);
 }

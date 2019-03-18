@@ -33,7 +33,6 @@ CONTRACT AmmReserve : public contract {
             double      min_sell_rate;
         };
 
-        /* TODO: the following is duplicated with common.hpp, see if can remove from here. */
         TABLE rate {
             double      stored_rate;
             asset       dest;

@@ -104,13 +104,14 @@ module.exports.trade = async function(options) {
     let userAccount = options.userAccount 
     let srcAmount = options.srcAmount
     let srcTokenAccount = options.srcTokenAccount
+    let destTokenAccount = options.destTokenAccount
     let srcSymbol = options.srcSymbol
     let destPrecision = options.destPrecision
     let destSymbol = options.destSymbol
     let destAccount = options.destAccount
     let minConversionRate = options.minConversionRate
 
-    let memo = `${destPrecision} ${destSymbol},${destAccount},${minConversionRate}`
+    let memo = `${destPrecision} ${destSymbol},${destTokenAccount},${destAccount},${minConversionRate}`
     let asset = `${srcAmount} ${srcSymbol}`
 
     const token = await eos.contract(srcTokenAccount);

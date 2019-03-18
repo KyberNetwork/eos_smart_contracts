@@ -106,8 +106,6 @@ double liquidity_get_rate(name self_contract,
                           const struct liq_params *params,
                           bool buy,
                           asset src) {
-    /* require(qtyInSrcWei <= MAX_QTY); - covered by asset limits */
-
     asset eos_balance = get_balance(self_contract, eos_contract, EOS_SYMBOL);
     double e = asset_to_damount(eos_balance);
     double rate = get_rate_with_e(params, buy, src, e);

@@ -151,7 +151,7 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
     if (!rate) return 0;
 
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
-    calc_dest(rate, src, dest_symbol, dest);
+    dest = calc_dest(rate, src, dest_symbol);
 
     /* make sure reserve has enough of the dest token */
     name dest_contract = buy ? state.token_contract : state.eos_contract;
