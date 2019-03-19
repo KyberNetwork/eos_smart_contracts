@@ -1,8 +1,8 @@
 #include "Network.hpp"
 #include <math.h>
 
-ACTION Network::init(name owner, name eos_contract, bool enable) {
-    eosio_assert(is_account(owner), "owner account does not exist");
+ACTION Network::init(name admin, name eos_contract, bool enable) {
+    eosio_assert(is_account(admin), "admin account does not exist");
     eosio_assert(is_account(eos_contract), "eos contract does not exist");
 
     require_auth(_self);
@@ -10,30 +10,24 @@ ACTION Network::init(name owner, name eos_contract, bool enable) {
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state new_state = {owner, eos_contract, enable, false};
+    state new_state = {admin, eos_contract, enable, false};
     state_inst.set(new_state, _self);
 }
 
-ACTION Network::setowner(name owner) {
-    eosio_assert(is_account(owner), "new owner account does not exist");
+ACTION Network::setadmin(name admin) {
+    eosio_assert(is_account(admin), "new admin account does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.owner);
-
-    s.owner = owner;
+    s.admin = admin;
     state_inst.set(s, _self);
 }
 
 ACTION Network::setenable(bool enable) {
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.owner);
-
     s.enabled = enable;
     state_inst.set(s, _self);
 }
@@ -41,9 +35,7 @@ ACTION Network::setenable(bool enable) {
 ACTION Network::addreserve(name reserve, bool add) {
     eosio_assert(is_account(reserve), "reserve account does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().owner);
+    get_state_assert_admin();
 
     reserves_type reserves_inst(_self, _self.value);
     auto itr = reserves_inst.find(reserve.value);
@@ -62,9 +54,7 @@ ACTION Network::addreserve(name reserve, bool add) {
 ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contract, bool add) {
     eosio_assert(is_account(token_contract), "token contract does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().owner);
+    get_state_assert_admin();
 
     reserves_type reserves_inst(_self, _self.value);
     eosio_assert(reserves_inst.find(reserve.value) != reserves_inst.end(), "invalid reserve");
@@ -122,11 +112,9 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract, string mem
     eosio_assert(to != _self, "can not witdraw to self");
     eosio_assert(quantity.amount > 0, "illegal quantity");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().owner);
+    get_state_assert_admin();
 
-    trans(_self, to, quantity, dest_contract, memo);
+    async_trans(_self, to, quantity, dest_contract, memo);
 }
 
 ACTION Network::getexprate(asset src, symbol dest_symbol) {
@@ -140,7 +128,7 @@ ACTION Network::getexprate(asset src, symbol dest_symbol) {
     auto token_symbol = (src.symbol == EOS_SYMBOL) ? dest_symbol: src.symbol;
     auto token_entry = reservespert_table_inst.get(token_symbol.raw(), "unlisted token");
 
-    search_best_rate(token_entry, src);
+    async_search_best_rate(token_entry, src);
     SEND_INLINE_ACTION(*this, storeexprate, {_self, "active"_n}, {src, dest_symbol});
 }
 
@@ -189,7 +177,7 @@ void Network::trade(name from, name to, asset src, string memo, state &state) {
     name expected_dest_contract = buy ? token_entry.token_contract : state.eos_contract;
     eosio_assert(info.dest_contract == expected_dest_contract, "unexpected dest contract.");
 
-    search_best_rate(token_entry, info.src);
+    async_search_best_rate(token_entry, info.src);
     SEND_INLINE_ACTION(*this, trade1, {_self, "active"_n}, {info});
 }
 
@@ -208,7 +196,7 @@ ACTION Network::trade1(trade_info info) {
     asset balance_pre = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
-    trans(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
+    async_trans(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
 
     SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
                        {best_reserve, info, info.src, dest, balance_pre});
@@ -238,7 +226,7 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
     reentrancy_check(false);
 } /* end of trade process */
 
-void Network::search_best_rate(reservespert &token_entry, asset src) {
+void Network::async_search_best_rate(reservespert &token_entry, asset src) {
     for (int i = 0; i < token_entry.reserve_contracts.size(); i++) {
         auto reserve = token_entry.reserve_contracts[i];
         action {permission_level{_self, "active"_n},
@@ -275,6 +263,13 @@ void Network::reentrancy_check(bool enter) {
     state_inst.set(s, _self);
 }
 
+Network::state_type Network::get_state_assert_admin() {
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().admin);
+    return state_inst;
+}
+
 void Network::parse_memo(string memo, trade_info &res) {
     auto parts = split(memo, ",");
 
@@ -307,8 +302,8 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
     }
 
     auto state = state_inst.get();
-    if (from == state.owner) {
-        /* owner can deposit funds, but not trade */
+    if (from == state.admin) {
+        /* admin can deposit funds, but not trade */
         return;
     } else {
         /* this is a trade */
@@ -324,7 +319,7 @@ extern "C" {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &Network::transfer);
         } else if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER( Network, (init)(setowner)(setenable)(addreserve)(listpairres)
+                EOSIO_DISPATCH_HELPER( Network, (init)(setadmin)(setenable)(addreserve)(listpairres)
                                                 (withdraw)(trade1)(trade2)(getexprate)
                                                 (storeexprate))
             }

@@ -3,13 +3,13 @@
 
 using namespace eosio;
 
-ACTION AmmReserve::init(name    owner,
+ACTION AmmReserve::init(name    admin,
                         name    network_contract,
                         symbol  token_symbol,
                         name    token_contract,
                         name    eos_contract,
                         bool    enable_trade) {
-    eosio_assert(is_account(owner), "owner account does not exist");
+    eosio_assert(is_account(admin), "admin account does not exist");
     eosio_assert(is_account(network_contract), "network account does not exist");
     eosio_assert(is_account(token_contract), "token account does not exist");
     eosio_assert(is_account(eos_contract), "eos contract does not exist");
@@ -20,7 +20,7 @@ ACTION AmmReserve::init(name    owner,
     eosio_assert(!state_inst.exists(), "init already called");
 
     state new_state;
-    new_state.owner = owner;
+    new_state.admin = admin;
     new_state.network_contract = network_contract;
     new_state.token_symbol = token_symbol;
     new_state.token_contract = token_contract;
@@ -40,7 +40,7 @@ ACTION AmmReserve::setparams(double r,
                              double min_sell_rate) {
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().owner);
+    require_auth(state_inst.get().admin);
 
     eosio_assert(fee_percent < 100, "illegal fee_percent");
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
@@ -59,16 +59,16 @@ ACTION AmmReserve::setparams(double r,
     params_inst.set(new_params, _self);
 }
 
-ACTION AmmReserve::setowner(name owner) {
-    eosio_assert(is_account(owner), "new owner account does not exist");
+ACTION AmmReserve::setadmin(name admin) {
+    eosio_assert(is_account(admin), "new admin account does not exist");
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
 
     auto s = state_inst.get();
-    require_auth(s.owner);
+    require_auth(s.admin);
 
-    s.owner = owner;
+    s.admin = admin;
     state_inst.set(s, _self);
 }
 
@@ -79,7 +79,7 @@ ACTION AmmReserve::setnetwork(name network_contract) {
     eosio_assert(state_inst.exists(), "init not called yet");
 
     auto s = state_inst.get();
-    require_auth(s.owner);
+    require_auth(s.admin);
 
     s.network_contract = network_contract;
     state_inst.set(s, _self);
@@ -90,7 +90,7 @@ ACTION AmmReserve::setenable(bool enable) {
     eosio_assert(state_inst.exists(), "init not called yet");
 
     auto s = state_inst.get();
-    require_auth(s.owner);
+    require_auth(s.admin);
 
     s.trade_enabled = enable;
     state_inst.set(s, _self);
@@ -101,7 +101,7 @@ ACTION AmmReserve::resetfee() {
     eosio_assert(state_inst.exists(), "init not called yet");
 
     auto s = state_inst.get();
-    require_auth(s.owner);
+    require_auth(s.admin);
 
     s.collected_fees_in_tokens.amount = 0;
     state_inst.set(s, _self);
@@ -128,9 +128,9 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
 
     state_type state_inst(_self, _self.value);
     eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().owner);
+    require_auth(state_inst.get().admin);
 
-    trans(_self, to, quantity, dest_contract, "");
+    async_trans(_self, to, quantity, dest_contract, "");
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
@@ -191,7 +191,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
     record_fees(params, buy ? dest : src, buy);
-    trans(_self, receiver, dest, dest_contract, "");
+    async_trans(_self, receiver, dest, dest_contract, "");
 }
 
 void AmmReserve::record_fees(const struct params &params, asset token, bool buy) {
@@ -217,8 +217,8 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
     }
 
     auto state = state_inst.get();
-    if (from == state.owner) {
-        /* owner can deposit funds, but not trade */
+    if (from == state.admin) {
+        /* admin can deposit funds, but not trade */
         return;
     } else {
         trade(from, quantity, memo, _code, state);
@@ -233,7 +233,7 @@ extern "C" {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &AmmReserve::transfer);
         } else if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setowner)(setnetwork)(setenable)
+                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setadmin)(setnetwork)(setenable)
                                                   (resetfee)(getconvrate)(withdraw))
             }
         }

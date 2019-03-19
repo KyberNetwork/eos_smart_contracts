@@ -25,7 +25,7 @@ CONTRACT Network : public contract {
         using contract::contract;
 
         TABLE state {
-            name        owner;
+            name        admin;
             name        eos_contract;
             bool        enabled;
             bool        during_trade;
@@ -60,9 +60,9 @@ CONTRACT Network : public contract {
         typedef eosio::multi_index<"tokenstats"_n, tokenstats> tokenstats_type;
         typedef eosio::singleton<"rate"_n, rate> rate_type;
 
-        ACTION init(name owner, name eos_contract, bool enable);
+        ACTION init(name admin, name eos_contract, bool enable);
 
-        ACTION setowner(name owner);
+        ACTION setadmin(name admin);
 
         ACTION setenable(bool enable);
 
@@ -88,11 +88,13 @@ CONTRACT Network : public contract {
     private:
         void trade(name from, name to, asset src, string memo, state &current_state);
 
-        void search_best_rate(reservespert &token_entry, asset src);
+        void async_search_best_rate(reservespert &token_entry, asset src);
 
         void get_best_rate_results(asset src, symbol dest_symbol, double &rate, name &reserve);
 
         void reentrancy_check(bool enter);
+
+        state_type get_state_assert_admin();
 
         void parse_memo(string memo, trade_info &info);
 

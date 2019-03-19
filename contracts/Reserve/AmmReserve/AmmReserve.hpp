@@ -12,7 +12,7 @@ CONTRACT AmmReserve : public contract {
         using contract::contract;
 
         TABLE state {
-            name        owner;
+            name        admin;
             name        network_contract;
             symbol      token_symbol;
             name        token_contract;
@@ -42,7 +42,7 @@ CONTRACT AmmReserve : public contract {
         typedef eosio::singleton<"params"_n, params> params_type;
         typedef eosio::singleton<"rate"_n, rate> rate_type;
 
-        ACTION init(name    owner,
+        ACTION init(name    admin,
                     name    network_contract,
                     symbol  token_symbol,
                     name    token_contract,
@@ -57,7 +57,7 @@ CONTRACT AmmReserve : public contract {
                           double max_sell_rate,
                           double min_sell_rate);
 
-        ACTION setowner(name owner);
+        ACTION setadmin(name admin);
 
         ACTION setnetwork(name network_contract);
 

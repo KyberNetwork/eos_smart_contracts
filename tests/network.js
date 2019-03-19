@@ -18,23 +18,23 @@ const tokenData =         {account: "nettoken",   publicKey: keyPairArray[0][0],
 const mockTokenData =     {account: "netmocktoken",   publicKey: keyPairArray[0][0], privateKey: keyPairArray[0][1]}
 
 const reserve1Data =      {account: "netreserve1", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve1OwnerData = {account: "netowner1",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve1AdminData = {account: "netadmin1",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve2Data =      {account: "netreserve2", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve2OwnerData = {account: "netowner2",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve2AdminData = {account: "netadmin2",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve3Data =      {account: "netreserve3", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve3OwnerData = {account: "netowner3",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve3AdminData = {account: "netadmin3",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve4Data =      {account: "netreserve4", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve4OwnerData = {account: "netowner4",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve4AdminData = {account: "netadmin4",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve5Data =      {account: "netreserve5", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve5OwnerData = {account: "netowner5",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve5AdminData = {account: "netadmin5",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve6Data =      {account: "netreserve11", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const reserve6OwnerData = {account: "netowner11",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve6AdminData = {account: "netadmin11",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 
 
 const aliceData =         {account: "netalice",   publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
 const mosheData =         {account: "netmoshe",   publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
 const networkData =       {account: "netnetwork", publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
-const networkOwnerData =  {account: "netowner", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+const networkAdminData =  {account: "netadmin", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
 
 const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -43,32 +43,32 @@ systemData.eos = Eos({ keyProvider: systemData.privateKey /* , verbose: 'false' 
 tokenData.eos = Eos({ keyProvider: tokenData.privateKey /* , verbose: 'false' */})
 mockTokenData.eos = Eos({ keyProvider: tokenData.privateKey /* , verbose: 'false' */})
 reserve1Data.eos = Eos({ keyProvider: reserve1Data.privateKey /* , verbose: 'false' */})
-reserve1OwnerData.eos = Eos({ keyProvider: reserve1OwnerData.privateKey /* , verbose: 'false' */})
+reserve1AdminData.eos = Eos({ keyProvider: reserve1AdminData.privateKey /* , verbose: 'false' */})
 reserve2Data.eos = Eos({ keyProvider: reserve2Data.privateKey /* , verbose: 'false' */})
-reserve2OwnerData.eos = Eos({ keyProvider: reserve2OwnerData.privateKey /* , verbose: 'false' */})
+reserve2AdminData.eos = Eos({ keyProvider: reserve2AdminData.privateKey /* , verbose: 'false' */})
 reserve3Data.eos = Eos({ keyProvider: reserve3Data.privateKey /* , verbose: 'false' */})
-reserve3OwnerData.eos = Eos({ keyProvider: reserve3OwnerData.privateKey /* , verbose: 'false' */})
+reserve3AdminData.eos = Eos({ keyProvider: reserve3AdminData.privateKey /* , verbose: 'false' */})
 reserve4Data.eos = Eos({ keyProvider: reserve4Data.privateKey /* , verbose: 'false' */})
-reserve4OwnerData.eos = Eos({ keyProvider: reserve4OwnerData.privateKey /* , verbose: 'false' */})
+reserve4AdminData.eos = Eos({ keyProvider: reserve4AdminData.privateKey /* , verbose: 'false' */})
 reserve5Data.eos = Eos({ keyProvider: reserve5Data.privateKey /* , verbose: 'false' */})
-reserve5OwnerData.eos = Eos({ keyProvider: reserve5OwnerData.privateKey /* , verbose: 'false' */})
+reserve5AdminData.eos = Eos({ keyProvider: reserve5AdminData.privateKey /* , verbose: 'false' */})
 reserve6Data.eos = Eos({ keyProvider: reserve6Data.privateKey /* , verbose: 'false' */})
-reserve6OwnerData.eos = Eos({ keyProvider: reserve6OwnerData.privateKey /* , verbose: 'false' */})
+reserve6AdminData.eos = Eos({ keyProvider: reserve6AdminData.privateKey /* , verbose: 'false' */})
 aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */})
 mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */})
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
-networkOwnerData.eos = Eos({ keyProvider: networkOwnerData.privateKey /* , verbose: 'false' */})
+networkAdminData.eos = Eos({ keyProvider: networkAdminData.privateKey /* , verbose: 'false' */})
 
-let networkAsOwner
+let networkAsAdmin
 let networkAsNetwork
 let networkAsAlice
 let tokenAsNetworkOwner
-let reserve1AsOwner
-let reserve2AsOwner
-let reserve3AsOwner
-let reserve4AsOwner
-let reserve5AsOwner
-let reserve6AsOwner
+let reserve1AsAdmin
+let reserve2AsAdmin
+let reserve3AsAdmin
+let reserve4AsAdmin
+let reserve5AsAdmin
+let reserve6AsAdmin
 let reserve1
 let reserve2
 let reserve3
@@ -92,14 +92,14 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:aliceData.account, owner: aliceData.publicKey, active: aliceData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:mosheData.account, owner: mosheData.publicKey, active: mosheData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve1OwnerData.account, owner: reserve1OwnerData.publicKey, active: reserve1OwnerData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve2OwnerData.account, owner: reserve2OwnerData.publicKey, active: reserve2OwnerData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve3OwnerData.account, owner: reserve3OwnerData.publicKey, active: reserve3OwnerData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve4OwnerData.account, owner: reserve4OwnerData.publicKey, active: reserve4OwnerData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve5OwnerData.account, owner: reserve5OwnerData.publicKey, active: reserve5OwnerData.publicKey})});
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve6OwnerData.account, owner: reserve6OwnerData.publicKey, active: reserve6OwnerData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve1AdminData.account, owner: reserve1AdminData.publicKey, active: reserve1AdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve2AdminData.account, owner: reserve2AdminData.publicKey, active: reserve2AdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve3AdminData.account, owner: reserve3AdminData.publicKey, active: reserve3AdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve4AdminData.account, owner: reserve4AdminData.publicKey, active: reserve4AdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve5AdminData.account, owner: reserve5AdminData.publicKey, active: reserve5AdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve6AdminData.account, owner: reserve6AdminData.publicKey, active: reserve6AdminData.publicKey})});
 
-    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkOwnerData.account, owner: networkOwnerData.publicKey, active: networkOwnerData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkAdminData.account, owner: networkAdminData.publicKey, active: networkAdminData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -122,16 +122,16 @@ before("setup accounts, contracts and initial funds", async () => {
     await networkData.eos.setabi(networkData.account, JSON.parse(fs.readFileSync(`contracts/Network/Network.abi`)))
 
     /* create contract objects */
-    networkAsOwner = await networkOwnerData.eos.contract(networkData.account);
+    networkAsAdmin = await networkAdminData.eos.contract(networkData.account);
     networkAsNetwork = await networkData.eos.contract(networkData.account);
     networkAsAlice = await aliceData.eos.contract(networkData.account);
-    tokenAsNetworkOwner = await networkOwnerData.eos.contract(tokenData.account);
-    reserve1AsOwner = await reserve1OwnerData.eos.contract(reserve1Data.account);
-    reserve2AsOwner = await reserve1OwnerData.eos.contract(reserve2Data.account);
-    reserve3AsOwner = await reserve1OwnerData.eos.contract(reserve3Data.account);
-    reserve4AsOwner = await reserve1OwnerData.eos.contract(reserve4Data.account);
-    reserve5AsOwner = await reserve1OwnerData.eos.contract(reserve5Data.account);
-    reserve6AsOwner = await reserve1OwnerData.eos.contract(reserve6Data.account);
+    tokenAsNetworkOwner = await networkAdminData.eos.contract(tokenData.account);
+    reserve1AsAdmin = await reserve1AdminData.eos.contract(reserve1Data.account);
+    reserve2AsAdmin = await reserve1AdminData.eos.contract(reserve2Data.account);
+    reserve3AsAdmin = await reserve1AdminData.eos.contract(reserve3Data.account);
+    reserve4AsAdmin = await reserve1AdminData.eos.contract(reserve4Data.account);
+    reserve5AsAdmin = await reserve1AdminData.eos.contract(reserve5Data.account);
+    reserve6AsAdmin = await reserve1AdminData.eos.contract(reserve6Data.account);
     reserve1 = await reserve1Data.eos.contract(reserve1Data.account);
     reserve2 = await reserve2Data.eos.contract(reserve2Data.account);
     reserve3 = await reserve3Data.eos.contract(reserve3Data.account);
@@ -199,7 +199,7 @@ before("setup accounts, contracts and initial funds", async () => {
     /* init reserves, setparams */
     await reserve1.init({
         token_symbol: "4,SYS",
-        owner: reserve1OwnerData.account,
+        admin: reserve1AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -208,7 +208,7 @@ before("setup accounts, contracts and initial funds", async () => {
 
     await reserve2.init({
         token_symbol: "3,TOKA",
-        owner: reserve2OwnerData.account,
+        admin: reserve2AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -217,7 +217,7 @@ before("setup accounts, contracts and initial funds", async () => {
 
     await reserve3.init({
         token_symbol: "2,TOKB",
-        owner: reserve3OwnerData.account,
+        admin: reserve3AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -226,7 +226,7 @@ before("setup accounts, contracts and initial funds", async () => {
 
     await reserve4.init({
         token_symbol: "1,TOKC",
-        owner: reserve4OwnerData.account,
+        admin: reserve4AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -235,7 +235,7 @@ before("setup accounts, contracts and initial funds", async () => {
 
     await reserve5.init({
         token_symbol: "0,TOKD",
-        owner: reserve5OwnerData.account,
+        admin: reserve5AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -244,7 +244,7 @@ before("setup accounts, contracts and initial funds", async () => {
 
     await reserve6.init({
         token_symbol: "4,SYS",
-        owner: reserve6OwnerData.account,
+        admin: reserve6AdminData.account,
         network_contract: networkData.account,
         token_contract: tokenData.account,
         eos_contract: tokenData.account,
@@ -270,64 +270,64 @@ before("setup accounts, contracts and initial funds", async () => {
         min_sell_rate: "0.00000555"
     }
 
-    await reserve1AsOwner.setparams(defaultParams,{authorization: `${reserve1OwnerData.account}@active`});
-    await reserve2AsOwner.setparams(defaultParams,{authorization: `${reserve2OwnerData.account}@active`});
-    await reserve3AsOwner.setparams(defaultParams,{authorization: `${reserve3OwnerData.account}@active`});
-    await reserve4AsOwner.setparams(defaultParams,{authorization: `${reserve4OwnerData.account}@active`});
-    await reserve5AsOwner.setparams(defaultParams,{authorization: `${reserve5OwnerData.account}@active`});
-    await reserve6AsOwner.setparams(defaultParams,{authorization: `${reserve6OwnerData.account}@active`});
+    await reserve1AsAdmin.setparams(defaultParams,{authorization: `${reserve1AdminData.account}@active`});
+    await reserve2AsAdmin.setparams(defaultParams,{authorization: `${reserve2AdminData.account}@active`});
+    await reserve3AsAdmin.setparams(defaultParams,{authorization: `${reserve3AdminData.account}@active`});
+    await reserve4AsAdmin.setparams(defaultParams,{authorization: `${reserve4AdminData.account}@active`});
+    await reserve5AsAdmin.setparams(defaultParams,{authorization: `${reserve5AdminData.account}@active`});
+    await reserve6AsAdmin.setparams(defaultParams,{authorization: `${reserve6AdminData.account}@active`});
         
     /* network configurations */
 
     /* init network */
-    await networkAsNetwork.init({owner:networkOwnerData.account, eos_contract:tokenData.account, enable:1},{authorization: `${networkData.account}@active`});
+    await networkAsNetwork.init({admin:networkAdminData.account, eos_contract:tokenData.account, enable:1},{authorization: `${networkData.account}@active`});
 
     /* after init network, renounce permission */
     await renouncePermToOnlyCode(networkData.eos, networkData.account)
 })
 
-describe('As owner', () => {
-    describe('Without reserves added beforehand', () => {
-        it('set owner', async function() {
+describe('as admin', () => {
+    describe('without reserves added beforehand', () => {
+        it('set admin', async function() {
             let state
-            await networkAsOwner.setowner({owner: aliceData.account},{authorization: `${networkOwnerData.account}@active`});
-            state = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
-            assert.equal(state["rows"][0].owner, aliceData.account);
+            await networkAsAdmin.setadmin({admin: aliceData.account},{authorization: `${networkAdminData.account}@active`});
+            state = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
+            assert.equal(state["rows"][0].admin, aliceData.account);
     
-            await networkAsAlice.setowner({owner: networkOwnerData.account},{authorization: `${aliceData.account}@active`});
-            state = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
-            assert.equal(state["rows"][0].owner, networkOwnerData.account);
+            await networkAsAlice.setadmin({admin: networkAdminData.account},{authorization: `${aliceData.account}@active`});
+            state = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
+            assert.equal(state["rows"][0].admin, networkAdminData.account);
         })
         it('set enable', async function() {
             let state
-            await networkAsOwner.setenable({enable: 0},{authorization: `${networkOwnerData.account}@active`});
-            state = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
+            await networkAsAdmin.setenable({enable: 0},{authorization: `${networkAdminData.account}@active`});
+            state = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
             assert.equal(state["rows"][0].enabled, 0);
     
-            await networkAsOwner.setenable({enable: 1},{authorization: `${networkOwnerData.account}@active`});
-            state = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
+            await networkAsAdmin.setenable({enable: 1},{authorization: `${networkAdminData.account}@active`});
+            state = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'state', json: true});
             assert.equal(state["rows"][0].enabled, 1);
         })
         it('withdraw', async function() {
             const balanceBefore = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
-            await networkAsOwner.withdraw({to:networkOwnerData.account, quantity:"5.0000 EOS", dest_contract:tokenData.account, memo:""},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.withdraw({to:networkAdminData.account, quantity:"5.0000 EOS", dest_contract:tokenData.account, memo:""},{authorization: `${networkAdminData.account}@active`});
             const balanceAfter = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceBefore - balanceAfter 
             balanceChange.should.be.closeTo(5.0000, AMOUNT_PRECISON);
         })
         it('deposit', async function() {
             const balanceBefore = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
-            await tokenAsNetworkOwner.transfer({from:networkOwnerData.account, to:networkData.account, quantity:"5.0000 EOS", memo:""},{authorization: [`${networkOwnerData.account}@active`]});
+            await tokenAsNetworkOwner.transfer({from:networkAdminData.account, to:networkData.account, quantity:"5.0000 EOS", memo:""},{authorization: [`${networkAdminData.account}@active`]});
             const balanceAfter = await getUserBalance({account:networkData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(5.0000, AMOUNT_PRECISON);
         })
         it('add multiple reserves, each with different token, than remove them', async function() {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
             assert.equal(reserves["rows"].length, 5)
             assert.equal(reserves["rows"][0]["contract"], reserve1Data.account)
@@ -335,48 +335,48 @@ describe('As owner', () => {
             assert.equal(reserves["rows"][2]["contract"], reserve3Data.account)
             assert.equal(reserves["rows"][3]["contract"], reserve4Data.account)
             assert.equal(reserves["rows"][4]["contract"], reserve5Data.account)
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve3Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve4Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve5Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve3Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
             reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
             assert.equal(reserves["rows"].length, 0)
         })
         xit('removed because of Duplicate transaction - revert on adding an already existing reserve', async function() {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            const p = networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            const p = networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             await ensureContractAssertionError(p, "can only add a non existing reserve or delete an existing one");
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
         })
         it('delete an existing reserve', async function() {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
             assert.equal(reserves["rows"].length, 1)
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
             reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
             assert.equal(reserves["rows"].length, 0)
         })
         xit('removed because of Duplicate transaction - revert on deleting a non existing reserve', async function() {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            const p = networkAsOwner.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            const p = networkAsAdmin.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
             await ensureContractAssertionError(p, "can only add a non existing reserve or delete an existing one");            
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
         })
     });
-    describe('With reserves added beforehand', () => {
+    describe('with reserves added beforehand', () => {
         before("add reserves", async () => {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
         });
         xit('removed because of Duplicate transaction - listing an existing pair for a reserve does nothing, also removing a pair works', async function() {
             /* start with two different pairs */
-            await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 2)
@@ -384,27 +384,27 @@ describe('As owner', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
             /* add one of the existing pairs again and make sure all stays the same */
-            await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
             /* remove one pair and see it is removed */
-            await networkAsOwner.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 1)
             assert.equal(reservesPerTable["rows"][0].symbol, "3,TOKA")
 
             /* remove the other pair and make sure they are both removed */ 
-            await networkAsOwner.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
         it('remove a pair from a reserve that does not hold that pair does nothing', async function() {
             /* start with two different pairs */
-            await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 2)
@@ -412,7 +412,7 @@ describe('As owner', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
             /* remove non existing pair and see all is the same */
-            await networkAsOwner.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
@@ -423,14 +423,14 @@ describe('As owner', () => {
             assert.equal(reservesPerTable["rows"][1].reserve_contracts[0], reserve2Data.account)
             
             /* remove existing pairs */
-            await networkAsOwner.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
         it('list more than one reserve per token, then delist', async function() {
-            await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 1)
@@ -438,47 +438,47 @@ describe('As owner', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[1], reserve6Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 2)
 
-            await networkAsOwner.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 1)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve6Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
-            await networkAsOwner.listpairres({add: 0, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
         after("remove reserves", async () => {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve3Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve4Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve5Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve6Data.account, add:0},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve2Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve3Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
         });
     })
 });
 
-describe('as non owner', () => {
-    describe('With reserves added and pairs listed beforehand', () => {
+describe('as non admin', () => {
+    describe('with reserves added and pairs listed beforehand', () => {
         before("add reserves, list pairs", async () => {
-            await networkAsOwner.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve1Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve2Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve3Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
 
-            await networkAsOwner.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve4Data.account, token_symbol:"1,TOKC", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve5Data.account, token_symbol:"0,TOKD", token_contract:tokenData.account},{authorization: `${networkOwnerData.account}@active`});
-            await networkAsOwner.listpairres({add: 1, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkOwnerData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve4Data.account, token_symbol:"1,TOKC", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve5Data.account, token_symbol:"0,TOKD", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkAdminData.account}@active`});
         });
-        it('can not set owner', async function() {
-            const p = networkAsAlice.setowner({owner: aliceData.account},{authorization: `${aliceData.account}@active`});
+        it('can not set admin', async function() {
+            const p = networkAsAlice.setadmin({admin: aliceData.account},{authorization: `${aliceData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
         it('can not enable', async function() {
@@ -532,13 +532,13 @@ describe('as non owner', () => {
             /* set params so that reserve1 will have higher rate than reserve2 */
             let alteredParams = Object.assign({}, defaultParams);
             alteredParams.p_min = defaultParams.p_min * 0.7; /* this will result in lower sell price -> higher buy price */
-            await reserve1AsOwner.setparams(alteredParams,{authorization: `${reserve1OwnerData.account}@active`});
+            await reserve1AsAdmin.setparams(alteredParams,{authorization: `${reserve1AdminData.account}@active`});
 
             /* get conversion rates from each of the reserves */
-            await reserve1AsOwner.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve1OwnerData.account}@active`});
+            await reserve1AsAdmin.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve1AdminData.account}@active`});
             rate1 = parseFloat((await reserve1Data.eos.getTableRows({table:"rate", code:reserve1Data.account, scope:reserve1Data.account, json: true})).rows[0].stored_rate)
 
-            await reserve2AsOwner.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve2OwnerData.account}@active`});
+            await reserve2AsAdmin.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve2AdminData.account}@active`});
             rate2 = parseFloat((await reserve2Data.eos.getTableRows({table:"rate", code:reserve2Data.account, scope:reserve2Data.account, json: true})).rows[0].stored_rate)
             
             await networkAsAlice.getexprate({src: "1.2322 EOS", dest_symbol: "4,SYS"},{authorization: `${aliceData.account}@active`});
@@ -550,13 +550,13 @@ describe('as non owner', () => {
             /* set params so that reserve1 will have lower rate than reserve2 */
             let alteredParams = Object.assign({}, defaultParams);
             alteredParams.p_min = defaultParams.p_min * 1.2; /* this will result in higher sell price -> lower buy price */
-            await reserve1AsOwner.setparams(alteredParams,{authorization: `${reserve1OwnerData.account}@active`});
+            await reserve1AsAdmin.setparams(alteredParams,{authorization: `${reserve1AdminData.account}@active`});
 
             /* get conversion rates from each of the reserves */
-            await reserve1AsOwner.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve1OwnerData.account}@active`});
+            await reserve1AsAdmin.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve1AdminData.account}@active`});
             rate1 = parseFloat((await reserve1Data.eos.getTableRows({table:"rate", code:reserve1Data.account, scope:reserve1Data.account, json: true})).rows[0].stored_rate)
 
-            await reserve2AsOwner.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve2OwnerData.account}@active`});
+            await reserve2AsAdmin.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve2AdminData.account}@active`});
             rate2 = parseFloat((await reserve2Data.eos.getTableRows({table:"rate", code:reserve2Data.account, scope:reserve2Data.account, json: true})).rows[0].stored_rate)
 
             await networkAsAlice.getexprate({src: "2.2322 EOS", dest_symbol: "4,SYS"},{authorization: `${aliceData.account}@active`});
@@ -564,11 +564,11 @@ describe('as non owner', () => {
             assert.notEqual(rate1, rate2)
             assert.equal(rate, rate2)
             
-            await reserve1AsOwner.setparams(defaultParams,{authorization: `${reserve1OwnerData.account}@active`});
+            await reserve1AsAdmin.setparams(defaultParams,{authorization: `${reserve1AdminData.account}@active`});
         })
         it('check accounting of volume', async function() {
             let tokenStats 
-            tokenStatsBefore = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
+            tokenStatsBefore = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
             eosCountBefore =  parseFloat(tokenStatsBefore["rows"][0]["eos_counter"].split(" "))
             tokenCountBefore =  parseFloat(tokenStatsBefore["rows"][0]["token_counter"].split(" "))
 
@@ -583,7 +583,7 @@ describe('as non owner', () => {
                 memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
 
-            tokenStatsAfter = await networkOwnerData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
+            tokenStatsAfter = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
             eosCountAfter =  parseFloat(tokenStatsAfter["rows"][0]["eos_counter"].split(" "))
             tokenCountAfter =  parseFloat(tokenStatsAfter["rows"][0]["token_counter"].split(" "))
 
@@ -612,7 +612,7 @@ describe('as non owner', () => {
             await ensureContractAssertionError(p, "rate < min conversion rate");
         })
         it('can not call internal action storeexprate', async function() {
-            const p = networkAsOwner.storeexprate({src: "1.000 TOKA", dest_symbol: "4,EOS"},{authorization: `${networkOwnerData.account}@active`});
+            const p = networkAsAdmin.storeexprate({src: "1.000 TOKA", dest_symbol: "4,EOS"},{authorization: `${networkAdminData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
         xit('can not call internal action trade1', async function() {})
