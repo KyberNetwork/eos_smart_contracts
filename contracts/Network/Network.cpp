@@ -114,7 +114,7 @@ ACTION Network::withdraw(name to, asset quantity, name dest_contract, string mem
 
     get_state_assert_admin();
 
-    async_trans(_self, to, quantity, dest_contract, memo);
+    async_pay(_self, to, quantity, dest_contract, memo);
 }
 
 ACTION Network::getexprate(asset src, symbol dest_symbol) {
@@ -163,7 +163,7 @@ void Network::trade(name from, name to, asset src, string memo, state &state) {
     eosio_assert(info.src.amount > 0, "src must be positive");
     eosio_assert(info.receiver != _self, "receiver can not be network contract");
 
-    eosio_assert(info.src.symbol == EOS_SYMBOL || info.dest.symbol == EOS_SYMBOL, "src or dest must be EOS");
+    eosio_assert(info.src.symbol == EOS_SYMBOL || info.dest.symbol == EOS_SYMBOL, "no eos side");
     eosio_assert(info.src.symbol != info.dest.symbol, "src symbol can not equal dest symbol");
 
     auto token_symbol = buy ? info.dest.symbol: info.src.symbol;
@@ -196,7 +196,7 @@ ACTION Network::trade1(trade_info info) {
     asset balance_pre = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
-    async_trans(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
+    async_pay(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
 
     SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
                        {best_reserve, info, info.src, dest, balance_pre});

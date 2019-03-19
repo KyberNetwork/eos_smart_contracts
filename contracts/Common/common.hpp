@@ -36,7 +36,7 @@ asset get_balance(name user, name token_contract, symbol symbol) {
     return userAcc.balance;
 }
 
-void async_trans(name from, name to, asset quantity, name dest_contract, string memo) {
+void async_pay(name from, name to, asset quantity, name dest_contract, string memo) {
     action {
         permission_level{from, "active"_n},
         dest_contract,

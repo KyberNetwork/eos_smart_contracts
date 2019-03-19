@@ -130,7 +130,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().admin);
 
-    async_trans(_self, to, quantity, dest_contract, "");
+    async_pay(_self, to, quantity, dest_contract, "");
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
@@ -191,7 +191,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
     record_fees(params, buy ? dest : src, buy);
-    async_trans(_self, receiver, dest, dest_contract, "");
+    async_pay(_self, receiver, dest, dest_contract, "");
 }
 
 void AmmReserve::record_fees(const struct params &params, asset token, bool buy) {
