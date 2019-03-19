@@ -14,7 +14,7 @@ struct liq_params {
     double      p_min;
     asset       max_eos_cap_buy;
     asset       max_eos_cap_sell;
-    double      fee_percent;
+    double      profit_percent;
     double      max_buy_rate;
     double      min_buy_rate;
     double      max_sell_rate;
@@ -38,21 +38,21 @@ double delta_e_func(const struct liq_params *params, double e, double delta_t) {
     // if overflow can return inf
 }
 
-double value_after_reducing_fee(const struct liq_params *params, double val) {
-    return ((100.0 - params->fee_percent) * val) / 100.0;
+double value_after_reducing_profit(const struct liq_params *params, double val) {
+    return ((100.0 - params->profit_percent) * val) / 100.0;
     // if overflow can return inf
 }
 
 double buy_rate(const struct liq_params *params, double e, double delta_e) {
     double delta_t = delta_t_func(params, e, delta_e);  // if overflow can return either inf or 0
-    delta_t = value_after_reducing_fee(params, delta_t);
+    delta_t = value_after_reducing_profit(params, delta_t);
     return delta_t / delta_e;
     // if overflow can return either inf or 0
 }
 
 double buy_rate_zero_quantity(const struct liq_params *params, double e) {
     double rate_pre_reduction = 1 / p_of_e(params, e);
-    return value_after_reducing_fee(params, rate_pre_reduction);
+    return value_after_reducing_profit(params, rate_pre_reduction);
     // if overflow can return either inf or 0
 }
 
@@ -68,7 +68,7 @@ double sell_rate(const struct liq_params *params,
 
 double sell_rate_zero_quantity(const struct liq_params *params, double e) {
     double rate_pre_reduction = p_of_e(params, e);
-    return value_after_reducing_fee(params, rate_pre_reduction);
+    return value_after_reducing_profit(params, rate_pre_reduction);
     // if overflow can return either inf or 0
 }
 
@@ -92,7 +92,7 @@ double get_rate_with_e(const struct liq_params *params, bool buy, asset src, dou
         rate = (delta_e == 0) ? buy_rate_zero_quantity(params, e) :
                                 buy_rate(params, e, delta_e);
     } else {
-        auto delta_t = value_after_reducing_fee(params, src_damount);
+        auto delta_t = value_after_reducing_profit(params, src_damount);
         rate = (delta_t == 0) ? sell_rate_zero_quantity(params, e) :
                                 sell_rate(params, e, src_damount, delta_t, delta_e);
         if (delta_t == 0) delta_e = 0;

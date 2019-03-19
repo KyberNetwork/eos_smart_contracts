@@ -18,7 +18,7 @@ CONTRACT AmmReserve : public contract {
             name        token_contract;
             name        eos_contract;
             bool        trade_enabled;
-            asset       collected_fees_in_tokens;
+            asset       collected_profit_in_tokens;
         };
 
         TABLE params {
@@ -26,7 +26,7 @@ CONTRACT AmmReserve : public contract {
             double      p_min;
             asset       max_eos_cap_buy;
             asset       max_eos_cap_sell;
-            double      fee_percent;
+            double      profit_percent;
             double      max_buy_rate;
             double      min_buy_rate;
             double      max_sell_rate;
@@ -53,7 +53,7 @@ CONTRACT AmmReserve : public contract {
                           double p_min,
                           asset  max_eos_cap_buy,
                           asset  max_eos_cap_sell,
-                          double fee_percent,
+                          double profit_percent,
                           double max_sell_rate,
                           double min_sell_rate);
 
@@ -63,11 +63,11 @@ CONTRACT AmmReserve : public contract {
 
         ACTION setenable(bool enable);
 
-        ACTION resetfee();
+        ACTION resetprofit();
 
         ACTION getconvrate(asset src);
 
-        ACTION withdraw(name to, asset quantity, name dest_contract);
+        ACTION withdraw(name to, asset quantity, name dest_contract, string memo);
 
         void transfer(name from, name to, asset quantity, string memo);
 
@@ -76,6 +76,8 @@ CONTRACT AmmReserve : public contract {
 
         void trade(name from, asset src, string memo, name code, state &state);
 
-        void record_fees(const struct params &params, asset token, bool buy);
+        void record_profit(const struct params &params, asset token, bool buy);
+
+        state_type get_state_assert_admin();
 };
 

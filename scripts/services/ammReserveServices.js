@@ -14,7 +14,7 @@ module.exports.getRate = async function(options) {
         pMin:           parseFloat(params["rows"][0]["p_min"]),
         maxEosCapBuy:   parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         maxEosCapSell:  parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
-        feePercent:     parseFloat(params["rows"][0]["fee_percent"]),
+        profitPercent:     parseFloat(params["rows"][0]["profit_percent"]),
         maxBuyRate:     parseFloat(params["rows"][0]["max_buy_rate"]),
         minBuyRate:     parseFloat(params["rows"][0]["min_buy_rate"]),
         maxSellRate:    parseFloat(params["rows"][0]["max_sell_rate"]),
@@ -34,7 +34,7 @@ module.exports.getRate = async function(options) {
         rate = (deltaE == 0) ? buyRateZeroQuantity(currentParams, e) :
                                buyRate(currentParams, e, deltaE)
     } else {
-        deltaT = valueAfterReducingFee(currentParams, srcAmount);
+        deltaT = valueAfterReducingprofit(currentParams, srcAmount);
         if (deltaT == 0) {
             rate = sellRateZeroQuantity(currentParams, e)
             deltaE = 0
@@ -52,13 +52,13 @@ module.exports.getRate = async function(options) {
 
 function buyRate(currentParams, e, deltaE) {
     let deltaT = deltaTFunc(currentParams, e, deltaE);
-    deltaT = valueAfterReducingFee(currentParams, deltaT);
+    deltaT = valueAfterReducingprofit(currentParams, deltaT);
     return deltaT / deltaE;
 }
 
 function buyRateZeroQuantity(currentParams, e) {
     let ratePreReduction = 1 / pOfE(currentParams.r, currentParams.pMin, e);
-    return valueAfterReducingFee(currentParams, ratePreReduction);
+    return valueAfterReducingprofit(currentParams, ratePreReduction);
 }
 
 function sellRate(currentParams, e, srcAmount, deltaT) {
@@ -69,11 +69,11 @@ function sellRate(currentParams, e, srcAmount, deltaT) {
 
 function sellRateZeroQuantity(currentParams, e) {
     let ratePreReduction = pOfE(currentParams.r, currentParams.pMin, e);
-    return valueAfterReducingFee(currentParams, ratePreReduction);
+    return valueAfterReducingprofit(currentParams, ratePreReduction);
 }
 
-function valueAfterReducingFee(currentParams, value) {
-    return ((100.0 - currentParams.feePercent) * value) / 100.0;
+function valueAfterReducingprofit(currentParams, value) {
+    return ((100.0 - currentParams.profitPercent) * value) / 100.0;
 }
 
 function deltaTFunc(currentParams, e, deltaE) {

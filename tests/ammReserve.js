@@ -95,7 +95,7 @@ before("setup accounts, contracts and initial funds", async () => {
         p_min: "0.05",
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
-        fee_percent: "0.25",
+        profit_percent: "0.25",
         max_sell_rate: "0.5555",
         min_sell_rate: "0.00000555"
     }
@@ -138,7 +138,8 @@ describe('As reserve admin', () => {
         await reserveAsOwner.withdraw({
             to:adminData.account,
             quantity:"23.0000 EOS",
-            dest_contract:tokenData.account
+            dest_contract:tokenData.account,
+            memo: ""
             },{authorization: `${adminData.account}@active`});
 
         const balanceAfter = await getUserBalance({account:adminData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
@@ -175,15 +176,16 @@ describe('as a regular user', () => {
         const p =  reserveAsAlice.setadmin({admin: adminData.account},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
-    it('can not reset fee', async function() {
-        const p = reserveAsAlice.resetfee({},{authorization: `${aliceData.account}@active`});
+    it('can not reset profit', async function() {
+        const p = reserveAsAlice.resetprofit({},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
     it('can not withdraw funds from reserve', async function() {
         const p = reserveAsAlice.withdraw({
             to:adminData.account,
             quantity:"23.0000 EOS",
-            dest_contract:tokenData.account
+            dest_contract:tokenData.account,
+            memo: ""
             },{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
@@ -316,9 +318,9 @@ describe('As network', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    it('fee is recorded on buy', async function() {
+    it('profit is recorded on buy', async function() {
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
  
         let calcRate = await reserveServices.getRate({ srcAmount: 3.3112, srcSymbol:"EOS", destSymbol:"SYS", eos:reserveData.eos, reserveAccount:reserveData.account, eosTokenAccount:tokenData.account})
         let calcDestAmount = srcAmount * calcRate;
@@ -327,49 +329,49 @@ describe('As network', () => {
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"3.3112 EOS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
         collected_change = collected_after - collected_before
-        let dest_amount_before_fee_reduction = calcDestAmount * (100 / (100 - 0.25))
-        let expected_fee = dest_amount_before_fee_reduction * (0.25 / 100)
-        collected_change.should.be.closeTo(expected_fee, AMOUNT_PRECISON);
+        let dest_amount_before_profit_reduction = calcDestAmount * (100 / (100 - 0.25))
+        let expected_profit = dest_amount_before_profit_reduction * (0.25 / 100)
+        collected_change.should.be.closeTo(expected_profit, AMOUNT_PRECISON);
     })
-    xit('removed because of Duplicate transaction - buy rate includes fees', async function() {
-        // get rate with fee
+    xit('removed because of Duplicate transaction - buy rate includes profit', async function() {
+        // get rate with profit
         await reserveAsNetwork.getconvrate({src: "7.3116 EOS"},{authorization: `${networkData.account}@active`});
-        let rateWithFees = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
+        let rateWithprofits = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
 
-        //set fee as 0 and get rate without fee
+        //set profit as 0 and get rate without profit
         let alteredParams = Object.assign({}, defaultParams);
-        alteredParams.fee_percent = 0
+        alteredParams.profit_percent = 0
         await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
 
-        // get rate without fee
+        // get rate without profit
         await reserveAsNetwork.getconvrate({src: "7.3116 EOS"},{authorization: `${networkData.account}@active`});
-        let rateWithoutFees = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
-        (rateWithoutFees * (100 + 0.25) / 100).should.be.closeTo(rateWithFees, AMOUNT_PRECISON);
+        let rateWithoutprofits = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
+        (rateWithoutprofits * (100 + 0.25) / 100).should.be.closeTo(rateWithprofits, AMOUNT_PRECISON);
 
-        // return fees to normal
+        // return profit to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
-    it('fee is recorded as 0 on buy when fee_percent = 0', async function() {
+    it('profit is recorded as 0 on buy when profit_percent = 0', async function() {
         let alteredParams = Object.assign({}, defaultParams);
-        alteredParams.fee_percent = 0
+        alteredParams.profit_percent = 0
         await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
 
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
  
         await reserveAsNetwork.getconvrate({src: "3.3112 EOS"},{authorization: `${networkData.account}@active`});
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"3.3112 EOS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
         collected_change = collected_after - collected_before
         assert.equal(collected_change, 0)
 
-        // return fees to normal
+        // return profit to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
     it('sell', async function() {
@@ -387,9 +389,9 @@ describe('As network', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    it('fee is recorded on sell', async function() {
+    it('profit is recorded on sell', async function() {
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
         let calcRate = await reserveServices.getRate({ srcAmount: 34.2113, srcSymbol:"SYS", destSymbol:"EOS", eos:reserveData.eos, reserveAccount:reserveData.account, eosTokenAccount:tokenData.account})
         let calcDestAmount = srcAmount * calcRate;
@@ -398,40 +400,40 @@ describe('As network', () => {
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"34.2113 SYS", memo:mosheData.account},
                 {authorization: [`${networkData.account}@active`]});
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
         collected_change = collected_after - collected_before
-        let expected_fee = 34.2113 * (0.25 / 100)
-        collected_change.should.be.closeTo(expected_fee, AMOUNT_PRECISON);
+        let expected_profit = 34.2113 * (0.25 / 100)
+        collected_change.should.be.closeTo(expected_profit, AMOUNT_PRECISON);
     })
-    xit('removed because of Duplicate transaction - sell rate includes fees', async function() {
-        // get rate with fee
+    xit('removed because of Duplicate transaction - sell rate includes profit', async function() {
+        // get rate with profit
         await reserveAsNetwork.getconvrate({src: "0.2111 SYS"},{authorization: `${networkData.account}@active`});
-        rateWithoutFees = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
+        rateWithoutprofits = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
 
-        //set fee as 0 and get rate without fee
+        //set profit as 0 and get rate without profit
         let alteredParams = Object.assign({}, defaultParams);
-        alteredParams.fee_percent = 0
+        alteredParams.profit_percent = 0
         await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
 
-        // get rate without fee
+        // get rate without profit
         await reserveAsNetwork.getconvrate({src: "0.2111 SYS"},{authorization: `${networkData.account}@active`});
-        let rateWithFees = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
+        let rateWithprofits = (await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate
 
-        (rateWithFees * (100 + 0.25) / 100).should.be.closeTo(rateWithoutFees, AMOUNT_PRECISON);
+        (rateWithprofits * (100 + 0.25) / 100).should.be.closeTo(rateWithoutprofits, AMOUNT_PRECISON);
 
-        // return fees to normal
+        // return profit to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
-    it('reset fee', async function() {
+    it('reset profit', async function() {
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
         assert.notEqual(collected_before, 0)
 
-        await reserveAsOwner.resetfee({},{authorization: `${adminData.account}@active`});
+        await reserveAsOwner.resetprofit({},{authorization: `${adminData.account}@active`});
 
         state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_fees_in_tokens.split(" ")[0])
+        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
         assert.equal(collected_after, 0)
     })
     

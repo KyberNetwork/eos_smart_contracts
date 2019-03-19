@@ -8,6 +8,7 @@ const assert = require('assert');
 const {ensureContractAssertionError, snooze, getUserBalance,
        renouncePermToOnlyCode, roundDown} = require('./utils');
 const networkServices = require('../scripts/services/networkServices')
+const reserveServices = require('../scripts/services/ammReserveServices')
 
 const AMOUNT_PRECISON = 0.0001
 const RATE_PRECISON =   0.00000001
@@ -75,6 +76,8 @@ let reserve3
 let reserve4
 let reserve5
 let reserve6
+let reserve1AsNetwork
+let reserve2AsNetwork
 
 let defaultParams
 
@@ -138,6 +141,8 @@ before("setup accounts, contracts and initial funds", async () => {
     reserve4 = await reserve4Data.eos.contract(reserve4Data.account);
     reserve5 = await reserve5Data.eos.contract(reserve5Data.account);
     reserve6 = await reserve6Data.eos.contract(reserve6Data.account);
+    reserve1AsNetwork = await networkData.eos.contract(reserve1Data.account);
+    reserve2AsNetwork = await networkData.eos.contract(reserve2Data.account);
 
     /* spread initial funds */
     await tokenData.eos.transaction(tokenData.account, myaccount => {
@@ -265,7 +270,7 @@ before("setup accounts, contracts and initial funds", async () => {
         p_min: "0.05",
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
-        fee_percent: "0.25",
+        profit_percent: "0.25",
         max_sell_rate: "0.5555",
         min_sell_rate: "0.00000555"
     }
@@ -535,16 +540,13 @@ describe('as non admin', () => {
             await reserve1AsAdmin.setparams(alteredParams,{authorization: `${reserve1AdminData.account}@active`});
 
             /* get conversion rates from each of the reserves */
-            await reserve1AsAdmin.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve1AdminData.account}@active`});
-            rate1 = parseFloat((await reserve1Data.eos.getTableRows({table:"rate", code:reserve1Data.account, scope:reserve1Data.account, json: true})).rows[0].stored_rate)
+            rate1 = await reserveServices.getRate({eos:reserve1Data.eos, srcAmount:1.2322, reserveAccount:reserve1Data.account, srcSymbol:'EOS', destSymbol:'SYS', eosTokenAccount:tokenData.account})
+            rate2 = await reserveServices.getRate({eos:reserve2Data.eos, srcAmount:1.2322, reserveAccount:reserve2Data.account, srcSymbol:'EOS', destSymbol:'SYS', eosTokenAccount:tokenData.account})
 
-            await reserve2AsAdmin.getconvrate({src: "1.2322 EOS"},{authorization: `${reserve2AdminData.account}@active`});
-            rate2 = parseFloat((await reserve2Data.eos.getTableRows({table:"rate", code:reserve2Data.account, scope:reserve2Data.account, json: true})).rows[0].stored_rate)
-            
             await networkAsAlice.getexprate({src: "1.2322 EOS", dest_symbol: "4,SYS"},{authorization: `${aliceData.account}@active`});
             rate = (await networkData.eos.getTableRows({table:"rate", code:networkData.account, scope:networkData.account, json: true})).rows[0].stored_rate
             assert.notEqual(rate1, rate2)
-            assert.equal(rate, rate1)
+            parseFloat(rate).should.be.closeTo(rate1, RATE_PRECISON);
         })
         it('can get epxected rate correctly when 2 reserves hold same token and 2nd have better rate', async function() {
             /* set params so that reserve1 will have lower rate than reserve2 */
@@ -553,16 +555,13 @@ describe('as non admin', () => {
             await reserve1AsAdmin.setparams(alteredParams,{authorization: `${reserve1AdminData.account}@active`});
 
             /* get conversion rates from each of the reserves */
-            await reserve1AsAdmin.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve1AdminData.account}@active`});
-            rate1 = parseFloat((await reserve1Data.eos.getTableRows({table:"rate", code:reserve1Data.account, scope:reserve1Data.account, json: true})).rows[0].stored_rate)
-
-            await reserve2AsAdmin.getconvrate({src: "2.2322 EOS"},{authorization: `${reserve2AdminData.account}@active`});
-            rate2 = parseFloat((await reserve2Data.eos.getTableRows({table:"rate", code:reserve2Data.account, scope:reserve2Data.account, json: true})).rows[0].stored_rate)
+            rate1 = await reserveServices.getRate({eos:reserve1Data.eos, srcAmount:2.2322, reserveAccount:reserve1Data.account, srcSymbol:'EOS', destSymbol:'SYS', eosTokenAccount:tokenData.account})
+            rate2 = await reserveServices.getRate({eos:reserve2Data.eos, srcAmount:2.2322, reserveAccount:reserve2Data.account, srcSymbol:'EOS', destSymbol:'SYS', eosTokenAccount:tokenData.account})
 
             await networkAsAlice.getexprate({src: "2.2322 EOS", dest_symbol: "4,SYS"},{authorization: `${aliceData.account}@active`});
             rate = (await networkData.eos.getTableRows({table:"rate", code:networkData.account, scope:networkData.account, json: true})).rows[0].stored_rate
             assert.notEqual(rate1, rate2)
-            assert.equal(rate, rate2)
+            parseFloat(rate).should.be.closeTo(rate2, RATE_PRECISON);
             
             await reserve1AsAdmin.setparams(defaultParams,{authorization: `${reserve1AdminData.account}@active`});
         })

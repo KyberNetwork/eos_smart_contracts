@@ -26,8 +26,8 @@ ACTION AmmReserve::init(name    admin,
     new_state.token_contract = token_contract;
     new_state.eos_contract = eos_contract;
     new_state.trade_enabled = enable_trade;
-    new_state.collected_fees_in_tokens.symbol = token_symbol;
-    new_state.collected_fees_in_tokens.amount = 0;
+    new_state.collected_profit_in_tokens.symbol = token_symbol;
+    new_state.collected_profit_in_tokens.amount = 0;
     state_inst.set(new_state, _self);
 }
 
@@ -35,14 +35,12 @@ ACTION AmmReserve::setparams(double r,
                              double p_min,
                              asset  max_eos_cap_buy,
                              asset  max_eos_cap_sell,
-                             double fee_percent,
+                             double profit_percent,
                              double max_sell_rate,
                              double min_sell_rate) {
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().admin);
+    get_state_assert_admin();
 
-    eosio_assert(fee_percent < 100, "illegal fee_percent");
+    eosio_assert(profit_percent < 100, "illegal profit_percent");
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
 
     params_type params_inst(_self, _self.value);
@@ -51,7 +49,7 @@ ACTION AmmReserve::setparams(double r,
     new_params.p_min = p_min;
     new_params.max_eos_cap_buy = max_eos_cap_buy;
     new_params.max_eos_cap_sell = max_eos_cap_sell;
-    new_params.fee_percent = fee_percent;
+    new_params.profit_percent = profit_percent;
     new_params.max_buy_rate = 1.0 / min_sell_rate;
     new_params.min_buy_rate = 1.0 / max_sell_rate;
     new_params.max_sell_rate = max_sell_rate;
@@ -62,12 +60,9 @@ ACTION AmmReserve::setparams(double r,
 ACTION AmmReserve::setadmin(name admin) {
     eosio_assert(is_account(admin), "new admin account does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.admin);
-
     s.admin = admin;
     state_inst.set(s, _self);
 }
@@ -75,35 +70,26 @@ ACTION AmmReserve::setadmin(name admin) {
 ACTION AmmReserve::setnetwork(name network_contract) {
     eosio_assert(is_account(network_contract), "network account does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.admin);
-
     s.network_contract = network_contract;
     state_inst.set(s, _self);
 }
 
 ACTION AmmReserve::setenable(bool enable) {
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.admin);
-
     s.trade_enabled = enable;
     state_inst.set(s, _self);
 }
 
-ACTION AmmReserve::resetfee() {
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
+ACTION AmmReserve::resetprofit() {
+    auto state_inst = get_state_assert_admin();
 
     auto s = state_inst.get();
-    require_auth(s.admin);
-
-    s.collected_fees_in_tokens.amount = 0;
+    s.collected_profit_in_tokens.amount = 0;
     state_inst.set(s, _self);
 }
 
@@ -114,6 +100,11 @@ ACTION AmmReserve::getconvrate(asset src) {
     eosio_assert(src.is_valid(), "src amount");
     eosio_assert(src.amount >= 0, "src amount can not be negative");
 
+    /* for simplicity and safety only network can get conversion rate */
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().network_contract);
+
     rate_result = reserve_get_conv_rate(src, dest);
     if (!rate_result) dest = asset();
 
@@ -122,15 +113,12 @@ ACTION AmmReserve::getconvrate(asset src) {
     rate_inst.set(s, _self);
 }
 
-ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract) {
+ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract, string memo) {
     eosio_assert(is_account(to), "to account does not exist");
     eosio_assert(is_account(dest_contract), "dest contract does not exist");
 
-    state_type state_inst(_self, _self.value);
-    eosio_assert(state_inst.exists(), "init not called yet");
-    require_auth(state_inst.get().admin);
-
-    async_pay(_self, to, quantity, dest_contract, "");
+    auto state_inst = get_state_assert_admin();
+    async_pay(_self, to, quantity, dest_contract, memo);
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
@@ -190,21 +178,28 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
-    record_fees(params, buy ? dest : src, buy);
+    record_profit(params, buy ? dest : src, buy);
     async_pay(_self, receiver, dest, dest_contract, "");
 }
 
-void AmmReserve::record_fees(const struct params &params, asset token, bool buy) {
+void AmmReserve::record_profit(const struct params &params, asset token, bool buy) {
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
-    double dfee = buy ? (token_damount * params.fee_percent / (100.0 - params.fee_percent)) :
-                        (token_damount * params.fee_percent) / 100.0;
-    int64_t fee_amount = damount_to_amount(dfee, token.symbol.precision());
-    asset fee = asset(fee_amount, token.symbol);
+    double dprofit = buy ? (token_damount * params.profit_percent / (100.0 - params.profit_percent)) :
+                        (token_damount * params.profit_percent) / 100.0;
+    int64_t profit_amount = damount_to_amount(dprofit, token.symbol.precision());
+    asset profit = asset(profit_amount, token.symbol);
 
     state_type state_inst(_self, _self.value);
     auto s = state_inst.get();
-    s.collected_fees_in_tokens += fee;
+    s.collected_profit_in_tokens += profit;
     state_inst.set(s, _self);
+}
+
+AmmReserve::state_type AmmReserve::get_state_assert_admin() {
+    state_type state_inst(_self, _self.value);
+    eosio_assert(state_inst.exists(), "init not called yet");
+    require_auth(state_inst.get().admin);
+    return state_inst;
 }
 
 void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
@@ -234,7 +229,7 @@ extern "C" {
         } else if (code == receiver) {
             switch (action) {
                 EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setadmin)(setnetwork)(setenable)
-                                                  (resetfee)(getconvrate)(withdraw))
+                                                  (resetprofit)(getconvrate)(withdraw))
             }
         }
         eosio_exit(0);

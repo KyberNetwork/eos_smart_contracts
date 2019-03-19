@@ -56,7 +56,7 @@ cleos set contract reserve1 contracts/Reserve/AmmReserve AmmReserve.wasm -p rese
 cleos push action reserve init '["resadmin", "network", "4,SYS", "eosio.token", "eosio.token", true ]' -p reserve@active
 cleos push action reserve1 init '["resadmin", "network", "4,OTA", "other.token", "eosio.token", true ]' -p reserve1@active
 
-#double r, double p_min, asset  max_eos_cap_buy, asset  max_eos_cap_sell, double fee_percent, double max_sell_rate, double min_sell_rate
+#double r, double p_min, asset  max_eos_cap_buy, asset  max_eos_cap_sell, double profit_percent, double max_sell_rate, double min_sell_rate
 cleos push action reserve setparams '[ "0.01", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p resadmin@active
 cleos push action reserve1 setparams '[ "0.01", "0.05", "20.0000 EOS", "20.0000 EOS", "0.25", "0.5555", "0.00000555" ]' -p resadmin@active
 
