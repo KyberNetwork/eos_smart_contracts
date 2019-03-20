@@ -40,7 +40,7 @@ ACTION AmmReserve::setparams(double r,
                              double min_sell_rate) {
     get_state_assert_admin();
 
-    eosio_assert(profit_percent < 100, "illegal profit_percent");
+    eosio_assert(profit_percent < 100.0, "illegal profit_percent");
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
 
     params_type params_inst(_self, _self.value);
@@ -95,7 +95,7 @@ ACTION AmmReserve::resetprofit() {
 
 ACTION AmmReserve::getconvrate(asset src) {
     double rate_result;
-    asset dest;
+    asset dest = asset();
 
     eosio_assert(src.is_valid(), "src amount");
     eosio_assert(src.amount >= 0, "src amount can not be negative");
@@ -105,8 +105,7 @@ ACTION AmmReserve::getconvrate(asset src) {
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().network_contract);
 
-    rate_result = reserve_get_conv_rate(src, dest);
-    if (!rate_result) dest = asset();
+    rate_result = reserve_get_conv_rate(src, false, dest);
 
     rate_type rate_inst(_self, _self.value);
     rate s = {rate_result, dest};
@@ -121,7 +120,7 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract, string 
     async_pay(_self, to, quantity, dest_contract, memo);
 }
 
-double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
+double AmmReserve::reserve_get_conv_rate(asset src, bool substract_src, asset &dest) {
     state_type state_inst(_self, _self.value);
     /* if reserve not ready return gracefully (store 0 rate) to continue queries in network */
     if (!state_inst.exists()) return 0;
@@ -135,7 +134,12 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
 
     bool buy = (EOS_SYMBOL == src.symbol) ? true : false;
     liq_params *liquidity_params = reinterpret_cast <liq_params *>(&params);
-    double rate = liquidity_get_rate(_self, state.eos_contract, liquidity_params, buy, src);
+    double rate = liquidity_get_rate(_self,
+                                     state.eos_contract,
+                                     liquidity_params,
+                                     buy,
+                                     src,
+                                     substract_src);
     if (!rate) return 0;
 
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
@@ -144,7 +148,10 @@ double AmmReserve::reserve_get_conv_rate(asset src, asset &dest) {
     /* make sure reserve has enough of the dest token */
     name dest_contract = buy ? state.token_contract : state.eos_contract;
     asset this_balance = get_balance(_self, dest_contract, dest_symbol);
-    if (this_balance < dest) return 0;
+    if (this_balance < dest) {
+        dest = asset();
+        return 0;
+    }
 
     return rate;
 }
@@ -171,21 +178,23 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
     name dest_contract = buy ? state.token_contract : state.eos_contract;
 
-    /* we assume rate and dest are stored since getconvrate was called beforehand in this tx */
-    rate_type rate_inst(_self, _self.value);
-    double conversion_rate = rate_inst.get().stored_rate;
-    asset dest = rate_inst.get().dest;
+    /* get conversion rate again */
+    asset dest = asset();
+    double conversion_rate = reserve_get_conv_rate(src, buy, dest);
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
-    record_profit(params, buy ? dest : src, buy);
+    record_profit(buy ? dest : src, buy);
     async_pay(_self, receiver, dest, dest_contract, "");
 }
 
-void AmmReserve::record_profit(const struct params &params, asset token, bool buy) {
+void AmmReserve::record_profit(asset token, bool buy) {
+    params_type params_inst(_self, _self.value);
+    auto params = params_inst.get();
+
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
     double dprofit = buy ? (token_damount * params.profit_percent / (100.0 - params.profit_percent)) :
-                        (token_damount * params.profit_percent) / 100.0;
+                           (token_damount * params.profit_percent) / 100.0;
     int64_t profit_amount = damount_to_amount(dprofit, token.symbol.precision());
     asset profit = asset(profit_amount, token.symbol);
 

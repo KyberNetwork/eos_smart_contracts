@@ -105,8 +105,16 @@ double liquidity_get_rate(name self_contract,
                           name eos_contract,
                           const struct liq_params *params,
                           bool buy,
-                          asset src) {
+                          asset src,
+                          bool substract_src) {
+
     asset eos_balance = get_balance(self_contract, eos_contract, EOS_SYMBOL);
+    if(substract_src) {
+        /* disregard eos src quantity, so it will not affect e used for rate calc. */
+        if (src > eos_balance) return 0;
+        eos_balance = eos_balance - src;
+    }
+
     double e = asset_to_damount(eos_balance);
     double rate = get_rate_with_e(params, buy, src, e);
 

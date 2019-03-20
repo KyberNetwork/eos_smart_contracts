@@ -72,11 +72,11 @@ CONTRACT AmmReserve : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        double reserve_get_conv_rate(asset src, asset &dest);
+        double reserve_get_conv_rate(asset src, bool substract_src, asset &dest);
 
         void trade(name from, asset src, string memo, name code, state &state);
 
-        void record_profit(const struct params &params, asset token, bool buy);
+        void record_profit(asset token, bool buy);
 
         state_type get_state_assert_admin();
 };
