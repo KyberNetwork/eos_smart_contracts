@@ -31,6 +31,27 @@ ACTION AmmReserve::init(name    admin,
     state_inst.set(new_state, _self);
 }
 
+ACTION AmmReserve::quickset(double p) {
+    auto state_inst = get_state_assert_admin();
+    params_type params_inst(_self, _self.value);
+    params new_params;
+
+    new_params.p_min = p / 2.0;
+    new_params.max_eos_cap_buy = asset(MAX_AMOUNT, EOS_SYMBOL);
+    new_params.max_eos_cap_sell = asset(MAX_AMOUNT, EOS_SYMBOL);
+    new_params.profit_percent = 0.0;
+    new_params.max_sell_rate = p * 2.0;
+    new_params.min_sell_rate = p / 2.0;
+    new_params.max_buy_rate = 1.0 / new_params.min_sell_rate;
+    new_params.min_buy_rate = 1.0 / new_params.max_sell_rate;
+
+    /* (p/p_min) = 2.0 = e^(rE) => r = ln(2)/E */
+    asset eos_balance = get_balance(_self, state_inst.get().eos_contract, EOS_SYMBOL);
+    new_params.r = 0.69314 / amount_to_damount(eos_balance.amount, EOS_PRECISION);
+
+    params_inst.set(new_params, _self);
+}
+
 ACTION AmmReserve::setparams(double r,
                              double p_min,
                              asset  max_eos_cap_buy,
@@ -193,8 +214,9 @@ void AmmReserve::record_profit(asset token, bool buy) {
     auto params = params_inst.get();
 
     double token_damount = amount_to_damount(token.amount, token.symbol.precision());
-    double dprofit = buy ? (token_damount * params.profit_percent / (100.0 - params.profit_percent)) :
-                           (token_damount * params.profit_percent) / 100.0;
+    double dprofit = buy ?
+        (token_damount * params.profit_percent / (100.0 - params.profit_percent)) :
+        (token_damount * params.profit_percent) / 100.0;
     int64_t profit_amount = damount_to_amount(dprofit, token.symbol.precision());
     asset profit = asset(profit_amount, token.symbol);
 
@@ -237,8 +259,8 @@ extern "C" {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &AmmReserve::transfer);
         } else if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(setparams)(setadmin)(setnetwork)(setenable)
-                                                  (resetprofit)(getconvrate)(withdraw))
+                EOSIO_DISPATCH_HELPER(AmmReserve, (init)(quickset)(setparams)(setadmin)(setnetwork)
+                                                  (setenable)(resetprofit)(getconvrate)(withdraw))
             }
         }
         eosio_exit(0);

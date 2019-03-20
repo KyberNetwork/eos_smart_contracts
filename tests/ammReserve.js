@@ -101,6 +101,11 @@ before("setup accounts, contracts and initial funds", async () => {
     }
     await reserveAsOwner.setparams(defaultParams, {authorization: `${adminData.account}@active`});
 
+    //params = await reserveData.eos.getTableRows({code: reserveData.account, scope:reserveData.account, table:"params", json: true })
+    //console.log(params)
+    //await reserveAsOwner.quickset({p: "0.1"}, {authorization: `${adminData.account}@active`});
+    //params = await reserveData.eos.getTableRows({code: reserveData.account, scope:reserveData.account, table:"params", json: true })
+    //console.log(params)
 })
 
 describe('As reserve admin', () => {

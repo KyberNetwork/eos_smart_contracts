@@ -49,13 +49,15 @@ CONTRACT AmmReserve : public contract {
                     name    eos_contract,
                     bool    enable_trade);
 
-         ACTION setparams(double r,
-                          double p_min,
-                          asset  max_eos_cap_buy,
-                          asset  max_eos_cap_sell,
-                          double profit_percent,
-                          double max_sell_rate,
-                          double min_sell_rate);
+        ACTION quickset(double p);
+
+        ACTION setparams(double r,
+                         double p_min,
+                         asset  max_eos_cap_buy,
+                         asset  max_eos_cap_sell,
+                         double profit_percent,
+                         double max_sell_rate,
+                         double min_sell_rate);
 
         ACTION setadmin(name admin);
 
