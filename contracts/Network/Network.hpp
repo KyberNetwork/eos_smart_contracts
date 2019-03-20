@@ -72,7 +72,7 @@ CONTRACT Network : public contract {
 
         ACTION withdraw(name to, asset quantity, name dest_contract, string memo);
 
-        /* for on chain integration, result written to "rate" singleton. */
+        /* for on chain integration only, result written to "rate" singleton. */
         ACTION getexprate(asset src, symbol dest_symbol);
 
         /* internal */

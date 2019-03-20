@@ -291,7 +291,6 @@ trade_info Network::create_trade_info(string memo, name from, asset src, name sr
     return res;
 }
 
-
 void Network::transfer(name from, name to, asset quantity, string memo) {
     if (to != _self) return;
 
