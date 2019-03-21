@@ -154,13 +154,20 @@ double AmmReserve::reserve_get_conv_rate(asset src, bool substract_src, asset &d
     auto params = params_inst.get();
 
     bool buy = (EOS_SYMBOL == src.symbol) ? true : false;
+
+    asset eos_balance = get_balance(_self, state.eos_contract, EOS_SYMBOL);
+    if(substract_src) {
+        /* disregard eos src quantity, so it will not affect e used for rate calc. */
+        if (src > eos_balance) return 0;
+        eos_balance = eos_balance - src;
+    }
+
     liq_params *liquidity_params = reinterpret_cast <liq_params *>(&params);
     double rate = liquidity_get_rate(_self,
-                                     state.eos_contract,
+                                     eos_balance,
                                      liquidity_params,
                                      buy,
-                                     src,
-                                     substract_src);
+                                     src);
     if (!rate) return 0;
 
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;

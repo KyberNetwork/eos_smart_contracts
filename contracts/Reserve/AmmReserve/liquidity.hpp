@@ -82,7 +82,13 @@ double rate_after_validation(const struct liq_params *params, double rate, bool 
     return rate;
 }
 
-double get_rate_with_e(const struct liq_params *params, bool buy, asset src, double e) {
+double liquidity_get_rate(name self_contract,
+                          asset eos_balance,
+                          const struct liq_params *params,
+                          bool buy,
+                          asset src) {
+
+    double e = asset_to_damount(eos_balance);
     double src_damount = asset_to_damount(src);
     double rate, delta_e, delta_t;
 
@@ -99,24 +105,4 @@ double get_rate_with_e(const struct liq_params *params, bool buy, asset src, dou
         if (delta_e > params->max_eos_cap_sell.amount) return 0;
     }
     return rate_after_validation(params, rate, buy);
-}
-
-double liquidity_get_rate(name self_contract,
-                          name eos_contract,
-                          const struct liq_params *params,
-                          bool buy,
-                          asset src,
-                          bool substract_src) {
-
-    asset eos_balance = get_balance(self_contract, eos_contract, EOS_SYMBOL);
-    if(substract_src) {
-        /* disregard eos src quantity, so it will not affect e used for rate calc. */
-        if (src > eos_balance) return 0;
-        eos_balance = eos_balance - src;
-    }
-
-    double e = asset_to_damount(eos_balance);
-    double rate = get_rate_with_e(params, buy, src, e);
-
-    return rate;
 }
