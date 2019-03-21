@@ -142,6 +142,8 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract, string 
 }
 
 double AmmReserve::reserve_get_conv_rate(asset src, bool substract_src, asset &dest) {
+    dest = asset();
+
     state_type state_inst(_self, _self.value);
     /* if reserve not ready return gracefully (store 0 rate) to continue queries in network */
     if (!state_inst.exists()) return 0;
@@ -162,21 +164,32 @@ double AmmReserve::reserve_get_conv_rate(asset src, bool substract_src, asset &d
         eos_balance = eos_balance - src;
     }
 
-    liq_params *liquidity_params = reinterpret_cast <liq_params *>(&params);
     double rate = liquidity_get_rate(_self,
                                      eos_balance,
-                                     liquidity_params,
                                      buy,
-                                     src);
-    if (!rate) return 0;
+                                     src,
+                                     params.r,
+                                     params.p_min,
+                                     params.profit_percent);
+    if (!rate || rate == INFINITY) return 0;
+
+    double min_allowed_rate = buy ? params.min_buy_rate : params.min_sell_rate;
+    double max_allowed_rate = buy ? params.max_buy_rate : params.max_sell_rate;
+    if ((rate > max_allowed_rate) || (rate < min_allowed_rate) || (rate > MAX_RATE)) return 0;
 
     symbol dest_symbol = buy ? state.token_symbol : EOS_SYMBOL;
     dest = calc_dest(rate, src, dest_symbol);
 
+    asset eos_trade_quantity = buy ? src : dest;
+    asset max_eos_cap = buy ? params.max_eos_cap_buy : params.max_eos_cap_sell;
+    if (eos_trade_quantity > max_eos_cap) {
+        dest = asset();
+        return 0;
+    }
+
     /* make sure reserve has enough of the dest token */
     name dest_contract = buy ? state.token_contract : state.eos_contract;
-    asset this_balance = get_balance(_self, dest_contract, dest_symbol);
-    if (this_balance < dest) {
+    if (get_balance(_self, dest_contract, dest_symbol) < dest) {
         dest = asset();
         return 0;
     }
