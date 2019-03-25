@@ -2,4 +2,5 @@
 *.abi
 node_modules
 tmp
+html
 .cproject
