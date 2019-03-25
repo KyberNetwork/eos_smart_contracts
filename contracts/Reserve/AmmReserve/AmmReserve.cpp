@@ -47,6 +47,7 @@ ACTION AmmReserve::quickset(double p) {
 
     /* (p/p_min) = 2.0 = e^(rE) => r = ln(2)/E */
     asset eos_balance = get_balance(_self, state_inst.get().eos_contract, EOS_SYMBOL);
+    eosio_assert(eos_balance > 0, "no balance");
     new_params.r = 0.69314 / amount_to_damount(eos_balance.amount, EOS_PRECISION);
 
     params_inst.set(new_params, _self);
@@ -115,9 +116,6 @@ ACTION AmmReserve::resetprofit() {
 }
 
 ACTION AmmReserve::getconvrate(asset src) {
-    double rate_result;
-    asset dest = asset();
-
     eosio_assert(src.is_valid(), "src amount");
     eosio_assert(src.amount >= 0, "src amount can not be negative");
 
@@ -126,7 +124,8 @@ ACTION AmmReserve::getconvrate(asset src) {
     eosio_assert(state_inst.exists(), "init not called yet");
     require_auth(state_inst.get().network_contract);
 
-    rate_result = reserve_get_conv_rate(src, false, dest);
+    asset dest = asset();
+    double rate_result = reserve_get_conv_rate(src, false, dest);
 
     rate_type rate_inst(_self, _self.value);
     rate s = {rate_result, dest};
