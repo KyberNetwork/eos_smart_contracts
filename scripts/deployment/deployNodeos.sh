@@ -20,6 +20,7 @@ cleos create account eosio reserve2 $PUBLIC_KEY
 cleos create account eosio reserve3 $PUBLIC_KEY
 cleos create account eosio alice $PUBLIC_KEY
 cleos create account eosio moshe $PUBLIC_KEY
+cleos create account eosio listener $PUBLIC_KEY
 
 cleos set contract eosio.token contracts/Mock/Token Token.wasm --abi Token.abi -p eosio.token@active -f
 cleos set contract other.token contracts/Mock/Token Token.wasm --abi Token.abi -p other.token@active
@@ -38,12 +39,12 @@ cleos push action other.token issue '[ "reserve1", "100.0000 OTA", "deposit" ]' 
 cleos push action eosio.token issue '[ "network", "100.0000 SYS", "deposit" ]' -p eosio@active
 cleos push action other.token issue '[ "network", "100.0000 OTA", "deposit" ]' -p eosio@active
 
-
 cleos push action eosio.token create '[ "eosio", "1000000000.0000 EOS"]' -p eosio.token@active
 cleos push action eosio.token issue '[ "alice", "100.0000 EOS", "memo" ]' -p eosio@active
 cleos push action eosio.token issue '[ "network", "100.0000 EOS", "memo" ]' -p eosio@active
 cleos push action eosio.token issue '[ "reserve", "69.3000 EOS", "deposit" ]' -p eosio@active
 cleos push action eosio.token issue '[ "reserve1", "69.3000 EOS", "deposit" ]' -p eosio@active
+cleos push action eosio.token issue '[ "listener", "1000.0000 EOS", "for listener" ]' -p eosio@active
 
 #deploy reserve
 cleos set account permission reserve active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"reserve\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p reserve@active
@@ -92,7 +93,12 @@ cleos get table reserve1 reserve1 rate
 #deploy network
 cleos set account permission network active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"network\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p network
 cleos set contract network contracts/Network Network.wasm -p network@active
-cleos push action network init '[ "netadmin", "eosio.token", true ]' -p network@active
+cleos push action network init '[ "netadmin", "eosio.token", "listener", true ]' -p network@active
+
+# deploy listener
+cleos set account permission listener active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"listener\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p listener
+cleos set contract listener contracts/Listener Listener.wasm --abi Listener.abi -p listener@active -f
+cleos push action listener config '[ "eosio.token", "network", "1.000", "0.0050 EOS" ]' -p listener@active
 
 # add reserves
 cleos push action network addreserve '[ "reserve", true ]' -p netadmin@active

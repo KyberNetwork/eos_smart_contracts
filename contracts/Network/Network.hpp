@@ -27,6 +27,7 @@ CONTRACT Network : public contract {
         TABLE state {
             name        admin;
             name        eos_contract;
+            name        listener;
             bool        enabled;
             bool        during_trade;
         };
@@ -68,10 +69,11 @@ CONTRACT Network : public contract {
          * @param admin - the only account that can deposit/withdraw tokens,
          * and configure the network contract.
          * @param eos_contract - account of EOS native token, usually eosio.token.
+         * @param listener - listener contract to call hooks.
          * @param enable - whether to initiate the network in an operating state,
          * or otherwise wait for a setenable operation.
          */
-        ACTION init(name admin, name eos_contract, bool enable);
+        ACTION init(name admin, name eos_contract, name listener, bool enable);
 
         /**
          * Change the admin account.
@@ -88,6 +90,15 @@ CONTRACT Network : public contract {
          * @param enable - enable or disable.
          */
         ACTION setenable(bool enable);
+
+        /**
+         * Set listener contract to process hooks.
+         * Can be used for various tasks such as promotions, traffic calculations, fee burning.
+         * Can only be called by the admin.
+         *
+         * @param listener - listener contract.
+         */
+        ACTION setlistener(name listener);
 
         /**
          * Add/Remove a reserve to/from the network.

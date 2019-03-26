@@ -285,7 +285,7 @@ before("setup accounts, contracts and initial funds", async () => {
     /* network configurations */
 
     /* init network */
-    await networkAsNetwork.init({admin:networkAdminData.account, eos_contract:tokenData.account, enable:1},{authorization: `${networkData.account}@active`});
+    await networkAsNetwork.init({admin:networkAdminData.account, eos_contract:tokenData.account, listener:"", enable:1},{authorization: `${networkData.account}@active`});
 
     /* after init network, renounce permission */
     await renouncePermToOnlyCode(networkData.eos, networkData.account)

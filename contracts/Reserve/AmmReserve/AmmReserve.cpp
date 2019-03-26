@@ -47,7 +47,7 @@ ACTION AmmReserve::quickset(double p) {
 
     /* (p/p_min) = 2.0 = e^(rE) => r = ln(2)/E */
     asset eos_balance = get_balance(_self, state_inst.get().eos_contract, EOS_SYMBOL);
-    eosio_assert(eos_balance > 0, "no balance");
+    eosio_assert(eos_balance.is_valid() && eos_balance.amount > 0, "no balance");
     new_params.r = 0.69314 / amount_to_damount(eos_balance.amount, EOS_PRECISION);
 
     params_inst.set(new_params, _self);

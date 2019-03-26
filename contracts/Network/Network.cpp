@@ -1,7 +1,7 @@
 #include "Network.hpp"
 #include <math.h>
 
-ACTION Network::init(name admin, name eos_contract, bool enable) {
+ACTION Network::init(name admin, name eos_contract, name listener, bool enable) {
     eosio_assert(is_account(admin), "admin account does not exist");
     eosio_assert(is_account(eos_contract), "eos contract does not exist");
 
@@ -10,7 +10,7 @@ ACTION Network::init(name admin, name eos_contract, bool enable) {
     state_type state_inst(_self, _self.value);
     eosio_assert(!state_inst.exists(), "init already called");
 
-    state new_state = {admin, eos_contract, enable, false};
+    state new_state = {admin, eos_contract, listener, enable, false};
     state_inst.set(new_state, _self);
 }
 
@@ -29,6 +29,14 @@ ACTION Network::setenable(bool enable) {
 
     auto s = state_inst.get();
     s.enabled = enable;
+    state_inst.set(s, _self);
+}
+
+ACTION Network::setlistener(name listener) {
+    auto state_inst = get_state_assert_admin();
+
+    auto s = state_inst.get();
+    s.listener = listener;
     state_inst.set(s, _self);
 }
 
@@ -223,6 +231,14 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
         s.eos_counter += eos;
     });
 
+    state_type state_inst(_self, _self.value);
+    name listener = state_inst.get().listener;
+    if (listener != name()) {
+        action {permission_level{_self, "active"_n},
+                listener,
+                "posttrade"_n,
+                make_tuple(src, dest, reserve, info.sender, info.receiver)}.send();
+    }
     reentrancy_check(false);
 } /* end of trade process */
 
@@ -318,8 +334,8 @@ extern "C" {
             eosio::execute_action(eosio::name(receiver), eosio::name(code), &Network::transfer);
         } else if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER( Network, (init)(setadmin)(setenable)(addreserve)(listpairres)
-                                                (withdraw)(trade1)(trade2)(getexprate)
+                EOSIO_DISPATCH_HELPER( Network, (init)(setadmin)(setenable)(setlistener)(addreserve)
+                                                (listpairres)(withdraw)(trade1)(trade2)(getexprate)
                                                 (storeexprate))
             }
         }
