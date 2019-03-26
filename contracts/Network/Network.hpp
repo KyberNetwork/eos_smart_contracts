@@ -158,6 +158,9 @@ CONTRACT Network : public contract {
         /** internal */
         ACTION trade2(name reserve, trade_info info, asset src, asset dest, asset balance_pre);
 
+        /** internal */
+        ACTION trade3();
+
         /**
          * Notification handler for transfer events from/to this contract.
          * Before init() is called anyone can deposit to the contract.

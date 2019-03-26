@@ -239,6 +239,12 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
                 "posttrade"_n,
                 make_tuple(src, dest, reserve, info.sender, info.receiver)}.send();
     }
+
+    SEND_INLINE_ACTION(*this, trade3, {_self, "active"_n}, {});
+}
+
+ACTION Network::trade3() {
+    require_auth(_self);  // can only be called internally
     reentrancy_check(false);
 } /* end of trade process */
 
@@ -335,8 +341,8 @@ extern "C" {
         } else if (code == receiver) {
             switch (action) {
                 EOSIO_DISPATCH_HELPER( Network, (init)(setadmin)(setenable)(setlistener)(addreserve)
-                                                (listpairres)(withdraw)(trade1)(trade2)(getexprate)
-                                                (storeexprate))
+                                                (listpairres)(withdraw)(trade1)(trade2)(trade3)
+                                                (getexprate)(storeexprate))
             }
         }
         eosio_exit(0);

@@ -98,7 +98,7 @@ cleos push action network init '[ "netadmin", "eosio.token", "listener", true ]'
 # deploy listener
 cleos set account permission listener active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"listener\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" owner -p listener
 cleos set contract listener contracts/Listener Listener.wasm --abi Listener.abi -p listener@active -f
-cleos push action listener config '[ "eosio.token", "network", "1.000", "0.0050 EOS" ]' -p listener@active
+cleos push action listener config '[ "eosio.token", "network", "3.000", "0.0001 EOS" ]' -p listener@active
 
 # add reserves
 cleos push action network addreserve '[ "reserve", true ]' -p netadmin@active
@@ -117,20 +117,20 @@ cleos get table network network reservespert
 
 # test trade for first reserve
 cleos get table reserve reserve rate
-cleos push action eosio.token transfer '[ "alice", "network", "0.0100 SYS", "4 EOS,eosio.token,moshe,0.000001" ]' -p alice@active
+cleos push action eosio.token transfer '[ "alice", "network", "10.0100 SYS", "4 EOS,eosio.token,moshe,0.000001" ]' -p alice@active
 cleos get table reserve reserve rate
 
 cleos get table reserve reserve rate
-cleos push action eosio.token transfer '[ "alice", "network", "0.0100 EOS", "4 SYS,eosio.token,moshe,0.000001" ]' -p alice@active
+cleos push action eosio.token transfer '[ "alice", "network", "5.0100 EOS", "4 SYS,eosio.token,moshe,0.000001" ]' -p alice@active
 cleos get table reserve reserve rate
 
 # test trade for second reserve
 cleos get table reserve1 reserve1 rate
-cleos push action other.token transfer '[ "alice", "network", "0.0100 OTA", "4 EOS,eosio.token,moshe,0.000001" ]' -p alice@active
+cleos push action other.token transfer '[ "alice", "network", "4.0100 OTA", "4 EOS,eosio.token,moshe,0.000001" ]' -p alice@active
 cleos get table reserve1 reserve1 rate
 
 
 cleos get table reserve1 reserve1 rate
-cleos push action eosio.token transfer '[ "alice", "network", "0.0100 EOS", "4 OTA,other.token,moshe,0.000001" ]' -p alice@active
+cleos push action eosio.token transfer '[ "alice", "network", "2.0100 EOS", "4 OTA,other.token,moshe,0.000001" ]' -p alice@active
 cleos get table reserve1 reserve1 rate
 

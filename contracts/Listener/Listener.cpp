@@ -43,9 +43,11 @@ CONTRACT Listener : public contract {
             if (state.rebate_percent > 0) {
                 asset eos_traded = (src.symbol == EOS_SYMBOL) ? src : dest;
                 asset rebate = calc_dest(state.rebate_percent / 100.00, eos_traded, EOS_SYMBOL);
-
                 asset eos_balance = get_balance(_self, state.eos_contract, EOS_SYMBOL);
-                if ((rebate <= eos_balance) && (rebate >= state.min_eos_for_rebate)) {
+
+                if ((rebate.amount > 0) &&
+                    (rebate <= eos_balance) &&
+                    (eos_traded >= state.min_eos_for_rebate)) {
                     async_pay(_self, sender, rebate, state.eos_contract, "rebate");
                 }
             }
