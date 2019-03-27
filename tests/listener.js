@@ -6,7 +6,8 @@ const should = require('chai').should();
 const assert = require('assert');
 
 const {ensureContractAssertionError, snooze, getUserBalance,
-       renouncePermToOnlyCode, roundDown} = require('./utils');
+       renouncePermToOnlyCode, addCodeToPerm, roundDown} = require('./utils');
+const networkServices = require('../scripts/services/networkServices')
 
 const AMOUNT_PRECISON = 0.0001
 const RATE_PRECISON =   0.00000001
@@ -103,47 +104,9 @@ before("setup accounts, contracts and initial funds", async () => {
     await networkAsNetwork.listpairres({add: 1, reserve:reserveData.account, token_symbol:"4,TOK", token_contract:tokenData.account},{authorization: `${networkData.account}@active`});
 
     /* renounce reserve control */
-    await renouncePermToOnlyCode(reserveData.eos, reserveData.account)
-
-    // TODO: unify to a simple function in utils
-    /* leave network control, just add code */ 
-    accountName = networkData.account
-    eos = networkData.eos
-    account = await eos.getAccount(accountName)
-    perms = JSON.parse(JSON.stringify(account.permissions))
-    perms[0]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
-    perms[1]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
-
-    updateAuthResult = await eos.transaction(tr => {
-          for(const perm of perms) {
-             tr.updateauth({
-                 account: accountName,
-                 permission: perm.perm_name,
-                 parent: perm.parent,
-                 auth: perm.required_auth
-             }, {authorization: `${accountName}@owner`})
-         }
-    })
-    
-    // TODO: unify to a simple function in utils
-    /* leave listener control, just add code */ 
-    accountName = listenerData.account
-    eos = listenerData.eos
-    account = await eos.getAccount(accountName)
-    perms = JSON.parse(JSON.stringify(account.permissions))
-    perms[0]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
-    perms[1]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
-
-    updateAuthResult = await eos.transaction(tr => {
-          for(const perm of perms) {
-             tr.updateauth({
-                 account: accountName,
-                 permission: perm.perm_name,
-                 parent: perm.parent,
-                 auth: perm.required_auth
-             }, {authorization: `${accountName}@owner`})
-         }
-    })
+    addCodeToPerm(networkData.eos, networkData.account);
+    addCodeToPerm(listenerData.eos, listenerData.account);
+    addCodeToPerm(reserveData.eos, reserveData.account);
 })
 
 describe('as alice', () => {
@@ -162,7 +125,7 @@ describe('as alice', () => {
         balanceChange =  eosBefore - eosAfter
         assert.equal(balanceChange, 5);
     })
-    it('no rebate is returned when listener was configured but not configured', async function() {
+    it('no rebate is returned when listener was set in network but not configured', async function() {
         await networkAsNetwork.setlistener({listener:`${listenerData.account}`},{authorization: `${networkData.account}@active`});
         const eosBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
 
@@ -198,7 +161,32 @@ describe('as alice', () => {
         balanceChange =  eosBefore - eosAfter
         assert.equal(balanceChange, 10.0 - (2.53 / 100.0) * 10.000);
     })
-    xit('rebate is returned on sell', async function() {})
+    it('rebate is returned on sell', async function() {
+        const eosBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        let calcRate = await networkServices.getRate({
+            eos:networkData.eos,
+            srcSymbol:'TOK',
+            destSymbol:'EOS',
+            srcAmount:1.0000,
+            networkAccount:networkData.account,
+            eosTokenAccount:tokenData.account}
+        )
+        let calcDestAmount = roundDown(srcAmount * calcRate, 4);
+
+        const token = await aliceData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:aliceData.account,
+            to:networkData.account,
+            quantity:"1.0000 TOK",
+            memo:"4 EOS," + tokenData.account + "," + aliceData.account + ",0.000000"},
+            {authorization: [`${aliceData.account}@active`]}
+        );
+
+        const eosAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  eosAfter - eosBefore
+        balanceChange.should.be.closeTo(calcDestAmount * (1 + (2.53 / 100.0)), AMOUNT_PRECISON);
+    })
 });
 
 });

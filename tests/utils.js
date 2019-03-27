@@ -42,6 +42,23 @@ async function getCurrentPermissions(eos, accountName) {
     return perms
 }
 
+const addCodeToPerm = async function(eos, accountName) {
+    const perms = await getCurrentPermissions(eos, accountName)
+    perms[0]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
+    perms[1]['required_auth']['accounts'] = [{"permission":{"actor":accountName,"permission":"eosio.code"},"weight":1}]
+
+    const updateAuthResult = await eos.transaction(tr => {
+          for(const perm of perms) {
+             tr.updateauth({
+                 account: accountName,
+                 permission: perm.perm_name,
+                 parent: perm.parent,
+                 auth: perm.required_auth
+             }, {authorization: `${accountName}@owner`})
+         }
+    })
+}
+
 const renouncePermToOnlyCode = async function(eos, accountName) {
     const perms = await getCurrentPermissions(eos, accountName)
     // console.log('Current permissions =>', JSON.stringify(perms))
@@ -72,5 +89,6 @@ module.exports ={
     snooze,
     getUserBalance,
     renouncePermToOnlyCode,
+    addCodeToPerm,
     roundDown
 }
