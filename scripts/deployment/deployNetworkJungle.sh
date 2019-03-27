@@ -11,7 +11,8 @@ TOKEN_ACCOUNT="testtokeaaaa"
 RESERVE_ACCOUNT="yolorese1112"
 RESERVE_ADMIN_ACCOUNT=lionofcourse
 #NETWORK_ACCOUNT="yolonetw1112"
-NETWORK_ACCOUNT="yolonetw1115"
+#NETWORK_ACCOUNT="yolonetw1115"
+NETWORK_ACCOUNT="yolonetw1121"
 NETWORK_ADMIN_ACCOUNT=lionofcourse
 MOSHE_ACCOUNT="testmoseaaaa"
 EOS_ACCOUNT="eosio.token"
@@ -40,26 +41,18 @@ $jleos push action eosio.token transfer "[ \"$ACCOUNT_NAME\", \"$NETWORK_ACCOUNT
 #delegate bw in each party
 $jleos system delegatebw $NETWORK_ACCOUNT $NETWORK_ACCOUNT "1.0 EOS" "1.0 EOS"
 
-#move some SYS to the accounts
-$jleos push action $TOKEN_ACCOUNT issue "[ \"$ALICE_ACCOUNT\", \"100.0000 SYS\", \"memo\" ]" -p $TOKEN_ACCOUNT@active
-
 #deploy network
-$jleos system buyram $ACCOUNT_NAME $NETWORK_ACCOUNT --kbytes 550
+$jleos system buyram $ACCOUNT_NAME $NETWORK_ACCOUNT --kbytes 650
 
 $jleos set contract $NETWORK_ACCOUNT contracts/Network Network.wasm --abi Network.abi -p $NETWORK_ACCOUNT@active
-sleep 3
-$jleos push action $NETWORK_ACCOUNT init "[ \"$NETWORK_ADMIN_ACCOUNT\", \"$EOS_ACCOUNT\", true ]" -p $NETWORK_ACCOUNT@active
 
-$jleos set account permission $NETWORK_ACCOUNT active "{\"threshold\": 1, \"keys\":[] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
-$jleos set account permission $NETWORK_ACCOUNT owner "{\"threshold\": 1, \"keys\":[] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
+sleep 3
+$jleos push action $NETWORK_ACCOUNT init "[ \"$NETWORK_ADMIN_ACCOUNT\", \"$EOS_ACCOUNT\", \"\", true ]" -p $NETWORK_ACCOUNT@active
+
+$jleos set account permission $NETWORK_ACCOUNT active "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
+$jleos set account permission $NETWORK_ACCOUNT owner "{\"threshold\": 1, \"keys\":[{\"key\":\"$PUBLIC_KEY\", \"weight\":1}] , \"accounts\":[{\"permission\":{\"actor\":\"$NETWORK_ACCOUNT\",\"permission\":\"eosio.code\"},\"weight\":1}], \"waits\":[] }" -p $NETWORK_ACCOUNT"@owner"
 
 $jleos push action $NETWORK_ACCOUNT addreserve "[ \"$RESERVE_ACCOUNT\", true ]" -p $NETWORK_ADMIN_ACCOUNT@active
-$jleos push action $NETWORK_ACCOUNT listpairres "[ \"$RESERVE_ACCOUNT\", \"0.0000 SYS\", \"$TOKEN_ACCOUNT\", true ]" -p $NETWORK_ADMIN_ACCOUNT@active
-
-$jleos get table $NETWORK_ACCOUNT $NETWORK_ACCOUNT reservespert
-
-$jleos push action $TOKEN_ACCOUNT transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"0.0100 SYS\", \"$ALICE_ACCOUNT,$TOKEN_ACCOUNT,4 SYS,$EOS_ACCOUNT,4 EOS,$MOSHE_ACCOUNT,20,0.000001,somewallid,somehint\" ]" -p $ALICE_ACCOUNT@active
-
 exit
 
 
