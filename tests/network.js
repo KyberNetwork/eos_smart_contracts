@@ -271,6 +271,7 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
+        fixed_fee: "0.0",
         max_sell_rate: "0.5555",
         min_sell_rate: "0.00000555"
     }
@@ -597,7 +598,7 @@ describe('as non admin', () => {
                 quantity:"5.0000 EOS",
                 memo:"bad memo"},
                 {authorization: [`${aliceData.account}@active`]});
-            await ensureContractAssertionError(p, "Abort Called");
+            await ensureContractAssertionError(p, "wrong memo length");
         })
         
         it('check trade reverts on big min conversion rate', async function() {

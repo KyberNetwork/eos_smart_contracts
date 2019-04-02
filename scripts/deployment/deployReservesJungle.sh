@@ -90,18 +90,18 @@ do
 done
 
 # previous params deployed:
-#$jleos push action $PXS_RESERVE_ACCOUNT     setparams '[ "0.035", "0.00001"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.00004",  "0.00001" ]'   -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $KARMA_RESERVE_ACCOUNT   setparams '[ "0.035", "0.000107" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.000428", "0.000107" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $TRYBE_RESERVE_ACCOUNT   setparams '[ "0.035", "0.0006"   , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0024",   "0.0006" ]'    -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $MEETONE_RESERVE_ACCOUNT setparams '[ "0.035", "0.000404" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.001616", "0.000404" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $EOSDAC_RESERVE_ACCOUNT  setparams '[ "0.035", "0.001015" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.00406",  "0.001015" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $IQ_RESERVE_ACCOUNT      setparams '[ "0.035", "0.0004765", "20.0000 EOS", "20.0000 EOS", "0.25", "0.001906", "0.0004765" ]' -p $RESERVE_ADMIN_ACCOUNT@active
-#$jleos push action $HVT_RESERVE_ACCOUNT     setparams '[ "0.035", "0.000355" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.00142",  "0.000355" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $PXS_RESERVE_ACCOUNT     setparams '[ "0.035", "0.00001"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.00004",  "0.00001" ]'   -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $KARMA_RESERVE_ACCOUNT   setparams '[ "0.035", "0.000107" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.000428", "0.000107" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $TRYBE_RESERVE_ACCOUNT   setparams '[ "0.035", "0.0006"   , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.0024",   "0.0006" ]'    -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $MEETONE_RESERVE_ACCOUNT setparams '[ "0.035", "0.000404" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.001616", "0.000404" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $EOSDAC_RESERVE_ACCOUNT  setparams '[ "0.035", "0.001015" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.00406",  "0.001015" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $IQ_RESERVE_ACCOUNT      setparams '[ "0.035", "0.0004765", "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.001906", "0.0004765" ]' -p $RESERVE_ADMIN_ACCOUNT@active
+#$jleos push action $HVT_RESERVE_ACCOUNT     setparams '[ "0.035", "0.000355" , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.00142",  "0.000355" ]'  -p $RESERVE_ADMIN_ACCOUNT@active
 
 
 #set params (done by reserve admin)
-$jleos push action ${ARR_RESERVE_ACCOUNT[0]} setparams '[ "0.035", "0.00022"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.00004",  "0.00001" ]' -p $RESERVE_ADMIN_ACCOUNT@active
-$jleos push action ${ARR_RESERVE_ACCOUNT[1]} setparams '[ "0.035", "0.00033"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.00004",  "0.00001" ]' -p $RESERVE_ADMIN_ACCOUNT@active    
+$jleos push action ${ARR_RESERVE_ACCOUNT[0]} setparams '[ "0.035", "0.00022"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.00004",  "0.00001" ]' -p $RESERVE_ADMIN_ACCOUNT@active
+$jleos push action ${ARR_RESERVE_ACCOUNT[1]} setparams '[ "0.035", "0.00033"  , "20.0000 EOS", "20.0000 EOS", "0.25", "0.0", "0.00004",  "0.00001" ]' -p $RESERVE_ADMIN_ACCOUNT@active    
 
 # complete a sell
 #$jleos push action ${ARR_TOKEN_ACCOUNT[$idx]} transfer "[ \"$ALICE_ACCOUNT\", \"$NETWORK_ACCOUNT\", \"811.2926 ${ARR_SYMBOL[$idx]}\", \"4 EOS,$ALICE_ACCOUNT,0.0000001\" ]" -p $ALICE_ACCOUNT@active

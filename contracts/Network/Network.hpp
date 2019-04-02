@@ -8,6 +8,8 @@
 #include <eosiolib/time.hpp>
 #include "../Common/common.hpp"
 
+#define EXPECTED_MEMO_LENGTH 4
+
 using namespace eosio;
 
 struct trade_info {
