@@ -9,6 +9,7 @@
 #include "../Common/common.hpp"
 
 #define EXPECTED_MEMO_LENGTH 4
+#define EXPECTED_SYMBOL_PARTS 2
 
 using namespace eosio;
 

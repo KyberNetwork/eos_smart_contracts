@@ -297,6 +297,7 @@ void Network::parse_memo(string memo, trade_info &res) {
     eosio_assert(parts.size() == EXPECTED_MEMO_LENGTH, "wrong memo length");
 
     auto sym_parts = split(parts[0], " ");
+    eosio_assert(sym_parts.size() == EXPECTED_SYMBOL_PARTS, "wrong num of symbol parts");
     res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
 
     res.dest_contract = name(parts[1].c_str());
