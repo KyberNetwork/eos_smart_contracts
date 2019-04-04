@@ -233,7 +233,7 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
 
     state_type state_inst(_self, _self.value);
     name listener = state_inst.get().listener;
-    if (listener != name()) {
+    if ((listener != name()) && (listener != "eosio"_n)) {
         action {permission_level{_self, "active"_n},
                 listener,
                 "posttrade"_n,
@@ -294,8 +294,10 @@ Network::state_type Network::get_state_assert_admin() {
 
 void Network::parse_memo(string memo, trade_info &res) {
     auto parts = split(memo, ",");
+    eosio_assert(parts.size() == EXPECTED_MEMO_LENGTH, "wrong memo length");
 
     auto sym_parts = split(parts[0], " ");
+    eosio_assert(sym_parts.size() == EXPECTED_SYMBOL_PARTS, "wrong num of symbol parts");
     res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
 
     res.dest_contract = name(parts[1].c_str());

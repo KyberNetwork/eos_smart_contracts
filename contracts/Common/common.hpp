@@ -32,8 +32,7 @@ asset get_balance(name user, name token_contract, symbol symbol) {
         /* balance was never created */
         return asset(0, symbol);
     }
-    const auto& userAcc = fromAcc.get(symbol.code().raw());
-    return userAcc.balance;
+    return itr->balance;
 }
 
 void async_pay(name from, name to, asset quantity, name dest_contract, string memo) {
