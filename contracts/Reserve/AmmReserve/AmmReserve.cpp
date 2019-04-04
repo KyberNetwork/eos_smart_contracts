@@ -40,7 +40,7 @@ ACTION AmmReserve::quickset(double p) {
     new_params.max_eos_cap_buy = asset(MAX_AMOUNT, EOS_SYMBOL);
     new_params.max_eos_cap_sell = asset(MAX_AMOUNT, EOS_SYMBOL);
     new_params.profit_percent = 0.0;
-    new_params.fixed_fee = 0.0;
+    new_params.ram_fee = 0.0;
     new_params.max_sell_rate = p * 2.0;
     new_params.min_sell_rate = p / 2.0;
     new_params.max_buy_rate = 1.0 / new_params.min_sell_rate;
@@ -59,7 +59,7 @@ ACTION AmmReserve::setparams(double r,
                              asset  max_eos_cap_buy,
                              asset  max_eos_cap_sell,
                              double profit_percent,
-                             double fixed_fee,
+                             double ram_fee,
                              double max_sell_rate,
                              double min_sell_rate) {
     get_state_assert_admin();
@@ -74,7 +74,7 @@ ACTION AmmReserve::setparams(double r,
     new_params.max_eos_cap_buy = max_eos_cap_buy;
     new_params.max_eos_cap_sell = max_eos_cap_sell;
     new_params.profit_percent = profit_percent;
-    new_params.fixed_fee = fixed_fee;
+    new_params.ram_fee = ram_fee;
     new_params.max_buy_rate = 1.0 / min_sell_rate;
     new_params.min_buy_rate = 1.0 / max_sell_rate;
     new_params.max_sell_rate = max_sell_rate;
@@ -173,7 +173,7 @@ double AmmReserve::reserve_get_conv_rate(asset src, bool subtract_src, asset &de
                                      params.r,
                                      params.p_min,
                                      params.profit_percent,
-                                     params.fixed_fee);
+                                     params.ram_fee);
     if (!rate || rate == INFINITY) return 0;
 
     double min_allowed_rate = buy ? params.min_buy_rate : params.min_sell_rate;

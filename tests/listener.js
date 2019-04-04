@@ -90,7 +90,7 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
-        fixed_fee: "0.0",
+        ram_fee: "0.0",
         max_sell_rate: "0.5555",
         min_sell_rate: "0.00000555"
     }
