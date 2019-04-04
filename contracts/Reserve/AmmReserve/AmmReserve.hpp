@@ -27,7 +27,7 @@ CONTRACT AmmReserve : public contract {
             asset       max_eos_cap_buy;
             asset       max_eos_cap_sell;
             double      profit_percent;
-            double      fixed_fee;
+            double      ram_fee;
             double      max_buy_rate;
             double      min_buy_rate;
             double      max_sell_rate;
@@ -86,7 +86,7 @@ CONTRACT AmmReserve : public contract {
         * @param max_eos_cap_buy - maximum single buy amount in EOS units.
         * @param max_eos_cap_sell - maximum single sell amount in EOS units.
         * @param profit_percent - percent of reserve tokens profit per trade.
-        * @param fixed_fee - amount of fixed eos fee per trade.
+        * @param ram_fee - eos fee per eos->token trade, purposed to cover transfer ram expenses.
         * @param max_sell_rate - maximum rate allowed, in token sell convention.
         * @param min_sell_rate - minimum rate allowed, in token sell convention.
         */
@@ -95,7 +95,7 @@ CONTRACT AmmReserve : public contract {
                          asset  max_eos_cap_buy,
                          asset  max_eos_cap_sell,
                          double profit_percent,
-                         double fixed_fee,
+                         double ram_fee,
                          double max_sell_rate,
                          double min_sell_rate);
 

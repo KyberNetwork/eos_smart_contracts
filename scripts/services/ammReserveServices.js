@@ -16,7 +16,7 @@ module.exports.getRate = async function(options) {
         maxEosCapBuy:   parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         maxEosCapSell:  parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         profitPercent:  parseFloat(params["rows"][0]["profit_percent"]),
-        fixedFee:       parseFloat(params["rows"][0]["fixed_fee"]),
+        RamFee:       parseFloat(params["rows"][0]["ram_fee"]),
         maxBuyRate:     parseFloat(params["rows"][0]["max_buy_rate"]),
         minBuyRate:     parseFloat(params["rows"][0]["min_buy_rate"]),
         maxSellRate:    parseFloat(params["rows"][0]["max_sell_rate"]),
@@ -34,13 +34,13 @@ module.exports.getRate = async function(options) {
         rate = valueAfterReducingProfit(currentParams, preProfitRate);
     } else {
         if (buy) {
-            deltaE = valueAfterReducingFixedFee(currentParams, srcAmount);
+            deltaE = valueAfterReducingRamFee(currentParams, srcAmount);
             deltaT = deltaTFunc(currentParams, e, deltaE);
             destAmount = valueAfterReducingProfit(currentParams, deltaT);
         } else {
             deltaT = valueAfterReducingProfit(currentParams, srcAmount);
             deltaE = deltaEFunc(currentParams, e, deltaT);
-            destAmount = valueAfterReducingFixedFee(currentParams, deltaE);
+            destAmount = valueAfterReducingRamFee(currentParams, deltaE);
         }
         rate = destAmount / srcAmount;
     }
@@ -60,8 +60,8 @@ function valueAfterReducingProfit(currentParams, value) {
     return ((100.0 - currentParams.profitPercent) * value) / 100.0;
 }
 
-function valueAfterReducingFixedFee(currentParams, value) {
-    return (currentParams.fixedFee >= value) ? 0 : (value - currentParams.fixedFee);
+function valueAfterReducingRamFee(currentParams, value) {
+    return (currentParams.RamFee >= value) ? 0 : (value - currentParams.RamFee);
 }
 
 function deltaTFunc(currentParams, e, deltaE) {
