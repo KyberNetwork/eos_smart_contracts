@@ -234,7 +234,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
 
     asset charged_fee_asset = asset(damount_to_amount(charged_fee, EOS_PRECISION), EOS_SYMBOL);
     if (charged_fee_asset.amount > 0) {
-        async_pay(_self, params.fee_wallet, charged_fee_asset, state.eos_contract, "payed fee");
+        async_pay(_self, params.fee_wallet, charged_fee_asset, state.eos_contract, "send fee");
     }
 }
 

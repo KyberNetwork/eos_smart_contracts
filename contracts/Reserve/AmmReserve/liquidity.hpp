@@ -40,8 +40,8 @@ double liquidity_get_rate(name self_contract,
     liq_info info = {r, p_min, profit_percent, ram_fee};
     double e = asset_to_damount(eos_balance);
     double src_damount = asset_to_damount(src);
-    double dest_damount, src_without_profit;
-    double rate, delta_e;
+    double dest_damount;
+    double rate;
 
     if (!src_damount) {
         double pre_profit_rate = buy ? (1 / p_of_e(info, e)) : p_of_e(info, e);
@@ -56,7 +56,7 @@ double liquidity_get_rate(name self_contract,
             charged_fee += info.ram_fee;
             dest_damount = get_delta_t(info, e, src_damount - charged_fee);
         } else {
-            delta_e = get_delta_e(info, e, src_damount);
+            double delta_e = get_delta_e(info, e, src_damount);
             charged_fee = (info.profit_percent * delta_e) / 100.0;
             dest_damount = delta_e - charged_fee;
         }

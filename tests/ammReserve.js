@@ -101,8 +101,8 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
         ram_fee: "0.2", // in EOS
-        max_sell_rate: "0.5555",
-        min_sell_rate: "0.00000555",
+        max_sell_rate: "0.2",
+        min_sell_rate: "0.05",
         fee_wallet: walletData.account
     }
     await reserveAsOwner.setparams(defaultParams, {authorization: `${adminData.account}@active`});
@@ -167,6 +167,22 @@ describe('As reserve admin', () => {
         const balanceAfter = await getUserBalance({account:reserveData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(23.0000, AMOUNT_PRECISON);
+    });
+    it('can not configure positive ram fee when fee wallet is given', async function() {
+        let alteredParams = Object.assign({}, defaultParams);
+        alteredParams.profit_percent = 0
+        alteredParams.ram_fee = 0.01
+        alteredParams.fee_wallet = ""
+        const p = reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
+        await ensureContractAssertionError(p, "no fee wallet");
+    });
+    it('can not configure positive profit percent when no fee wallet is given', async function() {
+        let alteredParams = Object.assign({}, defaultParams);
+        alteredParams.profit_percent = 2.1
+        alteredParams.ram_fee = 0
+        alteredParams.fee_wallet = ""
+        const p = reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
+        await ensureContractAssertionError(p, "no fee wallet");
     });
 });
 
@@ -291,7 +307,34 @@ describe('as a regular user', () => {
         /* return to previous params */
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
-    xit('removed because of Duplicate transaction - sell with rate > max_sell_rate is 0 ', async function() {        await reserveAsNetwork.getconvrate({src: "14.213 SYS"},{authorization: `${networkData.account}@active`});
+    it('getting 0 rate of if ram fee is as big as EOS amount on buy', async function() {
+        let alteredParams = Object.assign({}, defaultParams);
+        alteredParams.profit_percent = 0.0
+        alteredParams.ram_fee = 3.3112
+        await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
+
+        await reserveAsNetwork.getconvrate({src: "3.3112 EOS"},{authorization: `${networkData.account}@active`});
+        let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
+        assert.equal(rate, 0)
+
+        // return fee to normal
+        await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
+    });
+    it('getting 0 rate of if ram fee is almost as big as EOS amount on buy and creates bad rate', async function() {
+        let alteredParams = Object.assign({}, defaultParams);
+        alteredParams.profit_percent = 0.0
+        alteredParams.ram_fee = 3.3000
+        await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
+
+        await reserveAsNetwork.getconvrate({src: "3.3112 EOS"},{authorization: `${networkData.account}@active`});
+        let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
+        assert.equal(rate, 0)
+
+        // return fee to normal
+        await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
+    });
+    xit('removed because of Duplicate transaction - sell with rate > max_sell_rate is 0 ', async function() {
+        await reserveAsNetwork.getconvrate({src: "14.213 SYS"},{authorization: `${networkData.account}@active`});
         let rate = parseFloat((await reserveData.eos.getTableRows({table:"rate", code:reserveData.account, scope:reserveData.account, json: true})).rows[0].stored_rate)
         assert.notEqual(rate, 0)
     

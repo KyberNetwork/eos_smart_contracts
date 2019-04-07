@@ -34,17 +34,17 @@ module.exports.getRate = async function(options) {
         rate = ((100.0 - currentParams.profitPercent) * preProfitRate) / 100.0; 
     } else {
         if (buy) {
-            payedFee = (currentParams.profitPercent * srcAmount) / 100.0;
-            if (currentParams.ramFee >= (srcAmount - payedFee)) {
-                payedFee = 0;
+            chargedFee = (currentParams.profitPercent * srcAmount) / 100.0;
+            if (currentParams.ramFee >= (srcAmount - chargedFee)) {
+                chargedFee = 0;
                 return 0;
             }
-            payedFee += currentParams.ramFee;
-            destAmount = deltaTFunc(currentParams, e, srcAmount - payedFee);
+            chargedFee += currentParams.ramFee;
+            destAmount = deltaTFunc(currentParams, e, srcAmount - chargedFee);
         } else {
             deltaE = deltaEFunc(currentParams, e, srcAmount);
-            payedFee = (currentParams.profitPercent * deltaE) / 100.0;
-            destAmount = deltaE - payedFee;
+            chargedFee = (currentParams.profitPercent * deltaE) / 100.0;
+            destAmount = deltaE - chargedFee;
         }
         rate = destAmount / srcAmount;
     }
