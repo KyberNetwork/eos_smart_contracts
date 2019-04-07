@@ -169,7 +169,6 @@ void Network::trade(name from, name to, asset src, string memo, state &state) {
     /* validate inputs. */
     eosio_assert(info.src.is_valid(), "invalid transfer");
     eosio_assert(info.src.amount > 0, "src must be positive");
-    eosio_assert(info.receiver != _self, "receiver can not be network contract");
 
     eosio_assert(info.src.symbol == EOS_SYMBOL || info.dest.symbol == EOS_SYMBOL, "no eos side");
     eosio_assert(info.src.symbol != info.dest.symbol, "src symbol can not equal dest symbol");
@@ -201,10 +200,10 @@ ACTION Network::trade1(trade_info info) {
 
     asset dest = calc_dest(best_rate, info.src, info.dest.symbol);
 
-    asset balance_pre = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    asset balance_pre = get_balance(info.sender, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
-    async_pay(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
+    async_pay(_self, best_reserve, info.src, info.src_contract, (name{info.sender}).to_string());
 
     SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
                        {best_reserve, info, info.src, dest, balance_pre});
@@ -214,10 +213,10 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
     require_auth(_self);  // can only be called internally
 
     /* verify dest balance was indeed added to dest account */
-    auto balance_post = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    auto balance_post = get_balance(info.sender, info.dest_contract, info.dest.symbol);
     eosio_assert(balance_post > balance_pre, "post balance not bigger than pre balance.");
     asset balance_diff = balance_post - balance_pre;
-    eosio_assert(balance_diff >= dest, "trade amount not added to receiver.");
+    eosio_assert(balance_diff >= dest, "trade dest amount not added.");
 
     /* update token stats */
     bool buy = (src.symbol == EOS_SYMBOL);
@@ -237,7 +236,7 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
         action {permission_level{_self, "active"_n},
                 listener,
                 "posttrade"_n,
-                make_tuple(src, dest, reserve, info.sender, info.receiver)}.send();
+                make_tuple(src, dest, reserve, info.sender)}.send();
     }
 
     SEND_INLINE_ACTION(*this, trade3, {_self, "active"_n}, {});
@@ -301,8 +300,7 @@ void Network::parse_memo(string memo, trade_info &res) {
     res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
 
     res.dest_contract = name(parts[1].c_str());
-    res.receiver = name(parts[2].c_str());
-    res.min_conversion_rate = stof(parts[3].c_str());
+    res.min_conversion_rate = stof(parts[2].c_str());
 }
 
 trade_info Network::create_trade_info(string memo, name from, asset src, name src_contract) {

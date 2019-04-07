@@ -8,7 +8,7 @@
 #include <eosiolib/time.hpp>
 #include "../Common/common.hpp"
 
-#define EXPECTED_MEMO_LENGTH 4
+#define EXPECTED_MEMO_LENGTH 3
 #define EXPECTED_SYMBOL_PARTS 2
 
 using namespace eosio;
@@ -19,7 +19,6 @@ struct trade_info {
     asset       src;
     name        dest_contract;
     asset       dest;
-    name        receiver;
     double      min_conversion_rate;
 };
 
@@ -177,8 +176,8 @@ CONTRACT Network : public contract {
          * @param from - sender.
          * @param to - recipient, this contract.
          * @param quantity - sent asset.
-         * @param memo - Expected as “<dest symbol>,<dest contract>,<recipient account>,<min conversion rate>”
-         * For example: "4 KARMA,therealkarma,bob111111111,7200.0000"
+         * @param memo - Expected as “<dest symbol>,<dest contract>,<min conversion rate>”
+         * For example: "4 KARMA,therealkarma,7200.0000"
          */
         void transfer(name from, name to, asset quantity, string memo);
 

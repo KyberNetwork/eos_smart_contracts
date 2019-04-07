@@ -33,7 +33,7 @@ CONTRACT Listener : public contract {
             state_inst.set(new_state, _self);
         }
 
-        ACTION posttrade(asset src, asset dest, name reserve, name sender, name receiver) {
+        ACTION posttrade(asset src, asset dest, name reserve, name sender) {
             state_type state_inst(_self, _self.value);
             if (!state_inst.exists()) return;
             auto state = state_inst.get();

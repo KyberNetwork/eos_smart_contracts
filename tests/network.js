@@ -586,7 +586,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
 
             tokenStatsAfter = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
@@ -613,7 +613,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",100.000000"},
+                memo:"4 SYS," + tokenData.account  + ",100.000000"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "rate < min conversion rate");
         })
@@ -629,7 +629,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 MOCKA",
-                memo:"4 EOS,"  + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 EOS,"  + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unlisted token");
         })
@@ -639,7 +639,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 SYS",
-                memo:"4 EOS," + tokenData.account + "," +  mosheData.account + ",0.000001"},
+                memo:"4 EOS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unexpected src contract");
         })
@@ -649,14 +649,14 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unexpected src contract");
         })
 
         describe('using services', () => {
         it('buy token with precision 4', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -677,16 +677,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:4,
                 destSymbol:"SYS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         });
         it('sell token with precision 4', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -707,17 +706,16 @@ describe('as non admin', () => {
                 srcSymbol:"SYS",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         });
         it('buy token with precision 3', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -738,17 +736,16 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:3,
                 destSymbol:"TOKA",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
             return
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 3', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -769,18 +766,17 @@ describe('as non admin', () => {
                 srcSymbol:"TOKA",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
 
         })
         it('buy token with precision 2', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -801,16 +797,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:2,
                 destSymbol:"TOKB",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 2', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -831,17 +826,16 @@ describe('as non admin', () => {
                 srcSymbol:"TOKB",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('buy token with precision 1', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -862,16 +856,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:1,
                 destSymbol:"TOKC",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 1', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -892,17 +885,16 @@ describe('as non admin', () => {
                 srcSymbol:"TOKC",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
             it('buy token with precision 0', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -923,16 +915,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:0,
                 destSymbol:"TOKD",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 0', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -953,11 +944,10 @@ describe('as non admin', () => {
                 srcSymbol:"TOKD",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
