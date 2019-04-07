@@ -18,7 +18,6 @@ CONTRACT AmmReserve : public contract {
             name        token_contract;
             name        eos_contract;
             bool        trade_enabled;
-            asset       collected_profit_in_tokens;
         };
 
         TABLE params {
@@ -32,6 +31,7 @@ CONTRACT AmmReserve : public contract {
             double      min_buy_rate;
             double      max_sell_rate;
             double      min_sell_rate;
+            name        fee_wallet;
         };
 
         TABLE rate {
@@ -89,6 +89,7 @@ CONTRACT AmmReserve : public contract {
         * @param ram_fee - eos fee per eos->token trade, purposed to cover transfer ram expenses.
         * @param max_sell_rate - maximum rate allowed, in token sell convention.
         * @param min_sell_rate - minimum rate allowed, in token sell convention.
+        * @param fee_wallet - account to send profit and fee to.
         */
         ACTION setparams(double r,
                          double p_min,
@@ -97,7 +98,8 @@ CONTRACT AmmReserve : public contract {
                          double profit_percent,
                          double ram_fee,
                          double max_sell_rate,
-                         double min_sell_rate);
+                         double min_sell_rate,
+                         name   fee_wallet);
 
         /**
          * Change the admin account.
@@ -124,12 +126,6 @@ CONTRACT AmmReserve : public contract {
          * @param enable - enable or disable.
          */
         ACTION setenable(bool enable);
-
-        /**
-         * Reset the reserve’s profit counter.
-         * Can only be called by the reserve admin.
-         */
-        ACTION resetprofit();
 
         /**
          * Get conversion rate.
@@ -164,11 +160,12 @@ CONTRACT AmmReserve : public contract {
         void transfer(name from, name to, asset quantity, string memo);
 
     private:
-        double reserve_get_conv_rate(asset src, bool subtract_src, asset &dest);
+        double reserve_get_conv_rate(asset src,
+                                     bool subtract_src,
+                                     asset &dest,
+                                     double &charged_fee);
 
         void trade(name from, asset src, string memo, name code, state &state);
-
-        void record_profit(asset token, bool buy);
 
         state_type get_state_assert_admin();
 };

@@ -36,6 +36,8 @@ const aliceData =         {account: "netalice",   publicKey: keyPairArray[2][0],
 const mosheData =         {account: "netmoshe",   publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
 const networkData =       {account: "netnetwork", publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
 const networkAdminData =  {account: "netadmin", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+const walletData =        {account: "netawallet", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+
 
 const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -59,6 +61,8 @@ aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */
 mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */})
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 networkAdminData.eos = Eos({ keyProvider: networkAdminData.privateKey /* , verbose: 'false' */})
+walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
+
 
 let networkAsAdmin
 let networkAsNetwork
@@ -103,6 +107,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve6AdminData.account, owner: reserve6AdminData.publicKey, active: reserve6AdminData.publicKey})});
 
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkAdminData.account, owner: networkAdminData.publicKey, active: networkAdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -273,7 +278,8 @@ before("setup accounts, contracts and initial funds", async () => {
         profit_percent: "0.25",
         ram_fee: "0.0",
         max_sell_rate: "0.5555",
-        min_sell_rate: "0.00000555"
+        min_sell_rate: "0.00000555",
+        fee_wallet: walletData.account
     }
 
     await reserve1AsAdmin.setparams(defaultParams,{authorization: `${reserve1AdminData.account}@active`});

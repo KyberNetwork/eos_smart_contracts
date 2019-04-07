@@ -19,7 +19,8 @@ const reserveData = {account: "ammreserve", publicKey: keyPairArray[1][0], priva
 const aliceData =   {account: "ammalice",   publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
 const mosheData =   {account: "ammmoshe",   publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
 const networkData = {account: "ammnetwork", publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
-const adminData =   {account: "ammadmin",      publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+const adminData =   {account: "ammadmin",   publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+const walletData =  {account: "ammawallet", publicKey: keyPairArray[6][0], privateKey: keyPairArray[6][1]}
 
 const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -31,6 +32,8 @@ aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */
 mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */})
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 adminData.eos = Eos({ keyProvider: adminData.privateKey /* , verbose: 'false' */})
+walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
+
 
 let reserveAsOwner
 let reserveAsAlice
@@ -49,6 +52,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:mosheData.account, owner: mosheData.publicKey, active: mosheData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:adminData.account, owner: adminData.publicKey, active: adminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -96,9 +100,10 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
-        ram_fee: "0.0",
+        ram_fee: "0.2", // in EOS
         max_sell_rate: "0.5555",
-        min_sell_rate: "0.00000555"
+        min_sell_rate: "0.00000555",
+        fee_wallet: walletData.account
     }
     await reserveAsOwner.setparams(defaultParams, {authorization: `${adminData.account}@active`});
 
@@ -180,10 +185,6 @@ describe('as a regular user', () => {
     });
     it('can not set admin', async function() {
         const p =  reserveAsAlice.setadmin({admin: adminData.account},{authorization: `${aliceData.account}@active`});
-        await ensureContractAssertionError(p, "Missing required authority");
-    });
-    it('can not reset profit', async function() {
-        const p = reserveAsAlice.resetprofit({},{authorization: `${aliceData.account}@active`});
         await ensureContractAssertionError(p, "Missing required authority");
     });
     it('can not withdraw funds from reserve', async function() {
@@ -324,9 +325,8 @@ describe('As network', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    it('profit is recorded on buy', async function() {
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
+    it('profit and ram fee are sent on buy', async function() {
+        fee_before = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
  
         let calcRate = await reserveServices.getRate({ srcAmount: 3.3112, srcSymbol:"EOS", destSymbol:"SYS", eos:reserveData.eos, reserveAccount:reserveData.account, eosTokenAccount:tokenData.account})
         let calcDestAmount = srcAmount * calcRate;
@@ -334,13 +334,13 @@ describe('As network', () => {
         await reserveAsNetwork.getconvrate({src: "3.3112 EOS"},{authorization: `${networkData.account}@active`});
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"3.3112 EOS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
-        collected_change = collected_after - collected_before
-        let dest_amount_before_profit_reduction = calcDestAmount * (100 / (100 - 0.25))
-        let expected_profit = dest_amount_before_profit_reduction * (0.25 / 100)
-        collected_change.should.be.closeTo(expected_profit, AMOUNT_PRECISON);
+        fee_after = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
+        fee_change = fee_after - fee_before
+
+        let expected_fee = 3.3112 * (parseFloat(defaultParams.profit_percent) / 100) +
+                           parseFloat(defaultParams.ram_fee)
+        fee_change.should.be.closeTo(expected_fee, AMOUNT_PRECISON);
     })
     xit('removed because of Duplicate transaction - buy rate includes profit', async function() {
         // get rate with profit
@@ -360,24 +360,23 @@ describe('As network', () => {
         // return profit to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
-    it('profit is recorded as 0 on buy when profit_percent = 0', async function() {
+    it('fee is not sent on buy when profit_percent = 0 and ram_fee = 0', async function() {
         let alteredParams = Object.assign({}, defaultParams);
         alteredParams.profit_percent = 0
+        alteredParams.ram_fee = 0
         await reserveAsOwner.setparams(alteredParams,{authorization: `${adminData.account}@active`});
 
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
- 
+        fee_before = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
+
         await reserveAsNetwork.getconvrate({src: "3.3112 EOS"},{authorization: `${networkData.account}@active`});
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"3.3112 EOS", memo:mosheData.account},
                              {authorization: [`${networkData.account}@active`]});
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
-        collected_change = collected_after - collected_before
-        assert.equal(collected_change, 0)
+        fee_after = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
+        fee_change = fee_after - fee_before
+        assert.equal(fee_change, 0)
 
-        // return profit to normal
+        // return fee to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
     it('sell', async function() {
@@ -395,9 +394,8 @@ describe('As network', () => {
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
     });
-    it('profit is recorded on sell', async function() {
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
+    it('profit and ram fee are sent on sell', async function() {
+        fee_before = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
 
         let calcRate = await reserveServices.getRate({ srcAmount: 34.2113, srcSymbol:"SYS", destSymbol:"EOS", eos:reserveData.eos, reserveAccount:reserveData.account, eosTokenAccount:tokenData.account})
         let calcDestAmount = srcAmount * calcRate;
@@ -405,12 +403,13 @@ describe('As network', () => {
         await reserveAsNetwork.getconvrate({src: "34.2113 SYS"},{authorization: `${networkData.account}@active`});
         await token.transfer({from:networkData.account, to:reserveData.account, quantity:"34.2113 SYS", memo:mosheData.account},
                 {authorization: [`${networkData.account}@active`]});
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
 
-        collected_change = collected_after - collected_before
-        let expected_profit = 34.2113 * (0.25 / 100)
-        collected_change.should.be.closeTo(expected_profit, AMOUNT_PRECISON);
+        fee_after = await getUserBalance({account:walletData.account, symbol:'EOS', tokenContract:tokenData.account, eos:walletData.eos})
+        fee_change = fee_after - fee_before
+
+        let dest_amount_before_fee_reduction = calcDestAmount * (100 / (100 - 0.25))
+        let expected_fee = dest_amount_before_fee_reduction * (0.25 / 100)
+        fee_change.should.be.closeTo(expected_fee, AMOUNT_PRECISON);
     })
     xit('removed because of Duplicate transaction - sell rate includes profit', async function() {
         // get rate with profit
@@ -431,18 +430,6 @@ describe('As network', () => {
         // return profit to normal
         await reserveAsOwner.setparams(defaultParams,{authorization: `${adminData.account}@active`});
     });
-    it('reset profit', async function() {
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_before = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
-        assert.notEqual(collected_before, 0)
-
-        await reserveAsOwner.resetprofit({},{authorization: `${adminData.account}@active`});
-
-        state = await networkData.eos.getTableRows({code: reserveData.account, scope: reserveData.account, table: 'state', json: true});
-        collected_after = parseFloat(state["rows"][0].collected_profit_in_tokens.split(" ")[0])
-        assert.equal(collected_after, 0)
-    })
-    
     it('when eos is depleted - rate should be around pmin', async function() {
 
         //sell token until eos is depleted, than check price

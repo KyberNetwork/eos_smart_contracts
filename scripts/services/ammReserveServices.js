@@ -16,7 +16,7 @@ module.exports.getRate = async function(options) {
         maxEosCapBuy:   parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         maxEosCapSell:  parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         profitPercent:  parseFloat(params["rows"][0]["profit_percent"]),
-        RamFee:       parseFloat(params["rows"][0]["ram_fee"]),
+        ramFee:         parseFloat(params["rows"][0]["ram_fee"]),
         maxBuyRate:     parseFloat(params["rows"][0]["max_buy_rate"]),
         minBuyRate:     parseFloat(params["rows"][0]["min_buy_rate"]),
         maxSellRate:    parseFloat(params["rows"][0]["max_sell_rate"]),
@@ -31,16 +31,20 @@ module.exports.getRate = async function(options) {
     if (!srcAmount) {
         p = pOfE(currentParams.r, currentParams.pMin, e)
         preProfitRate = buy ? (1 / p) : p;
-        rate = valueAfterReducingProfit(currentParams, preProfitRate);
+        rate = ((100.0 - currentParams.profitPercent) * preProfitRate) / 100.0; 
     } else {
         if (buy) {
-            deltaE = valueAfterReducingRamFee(currentParams, srcAmount);
-            deltaT = deltaTFunc(currentParams, e, deltaE);
-            destAmount = valueAfterReducingProfit(currentParams, deltaT);
+            payedFee = (currentParams.profitPercent * srcAmount) / 100.0;
+            if (currentParams.ramFee >= (srcAmount - payedFee)) {
+                payedFee = 0;
+                return 0;
+            }
+            payedFee += currentParams.ramFee;
+            destAmount = deltaTFunc(currentParams, e, srcAmount - payedFee);
         } else {
-            deltaT = valueAfterReducingProfit(currentParams, srcAmount);
-            deltaE = deltaEFunc(currentParams, e, deltaT);
-            destAmount = valueAfterReducingRamFee(currentParams, deltaE);
+            deltaE = deltaEFunc(currentParams, e, srcAmount);
+            payedFee = (currentParams.profitPercent * deltaE) / 100.0;
+            destAmount = deltaE - payedFee;
         }
         rate = destAmount / srcAmount;
     }
@@ -55,14 +59,6 @@ module.exports.getRate = async function(options) {
 }
 
 /////////// internal function /////////// 
-
-function valueAfterReducingProfit(currentParams, value) {
-    return ((100.0 - currentParams.profitPercent) * value) / 100.0;
-}
-
-function valueAfterReducingRamFee(currentParams, value) {
-    return (currentParams.RamFee >= value) ? 0 : (value - currentParams.RamFee);
-}
 
 function deltaTFunc(currentParams, e, deltaE) {
     return (-1.0) *

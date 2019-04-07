@@ -26,8 +26,6 @@ ACTION AmmReserve::init(name    admin,
     new_state.token_contract = token_contract;
     new_state.eos_contract = eos_contract;
     new_state.trade_enabled = enable_trade;
-    new_state.collected_profit_in_tokens.symbol = token_symbol;
-    new_state.collected_profit_in_tokens.amount = 0;
     state_inst.set(new_state, _self);
 }
 
@@ -45,6 +43,7 @@ ACTION AmmReserve::quickset(double p) {
     new_params.min_sell_rate = p / 2.0;
     new_params.max_buy_rate = 1.0 / new_params.min_sell_rate;
     new_params.min_buy_rate = 1.0 / new_params.max_sell_rate;
+    new_params.fee_wallet = name();
 
     /* (p/p_min) = 2.0 = e^(rE) => r = ln(2)/E */
     asset eos_balance = get_balance(_self, state_inst.get().eos_contract, EOS_SYMBOL);
@@ -61,11 +60,15 @@ ACTION AmmReserve::setparams(double r,
                              double profit_percent,
                              double ram_fee,
                              double max_sell_rate,
-                             double min_sell_rate) {
+                             double min_sell_rate,
+                             name   fee_wallet) {
     get_state_assert_admin();
 
     eosio_assert(profit_percent < 100.0, "illegal profit_percent");
     eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
+    if (profit_percent || ram_fee) {
+        eosio_assert(((fee_wallet != name()) && (fee_wallet != "eosio"_n)), "no fee wallet");
+    }
 
     params_type params_inst(_self, _self.value);
     params new_params;
@@ -79,6 +82,7 @@ ACTION AmmReserve::setparams(double r,
     new_params.min_buy_rate = 1.0 / max_sell_rate;
     new_params.max_sell_rate = max_sell_rate;
     new_params.min_sell_rate = min_sell_rate;
+    new_params.fee_wallet = fee_wallet;
     params_inst.set(new_params, _self);
 }
 
@@ -110,14 +114,6 @@ ACTION AmmReserve::setenable(bool enable) {
     state_inst.set(s, _self);
 }
 
-ACTION AmmReserve::resetprofit() {
-    auto state_inst = get_state_assert_admin();
-
-    auto s = state_inst.get();
-    s.collected_profit_in_tokens.amount = 0;
-    state_inst.set(s, _self);
-}
-
 ACTION AmmReserve::getconvrate(asset src) {
     eosio_assert(src.is_valid(), "src amount");
     eosio_assert(src.amount >= 0, "src amount can not be negative");
@@ -128,7 +124,8 @@ ACTION AmmReserve::getconvrate(asset src) {
     require_auth(state_inst.get().network_contract);
 
     asset dest = asset();
-    double rate_result = reserve_get_conv_rate(src, false, dest);
+    double charged_fee;
+    double rate_result = reserve_get_conv_rate(src, false, dest, charged_fee);
 
     rate_type rate_inst(_self, _self.value);
     rate s = {rate_result, dest};
@@ -143,7 +140,10 @@ ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract, string 
     async_pay(_self, to, quantity, dest_contract, memo);
 }
 
-double AmmReserve::reserve_get_conv_rate(asset src, bool subtract_src, asset &dest) {
+double AmmReserve::reserve_get_conv_rate(asset src,
+                                         bool subtract_src,
+                                         asset &dest,
+                                         double &charged_fee) {
     dest = asset();
 
     state_type state_inst(_self, _self.value);
@@ -173,7 +173,8 @@ double AmmReserve::reserve_get_conv_rate(asset src, bool subtract_src, asset &de
                                      params.r,
                                      params.p_min,
                                      params.profit_percent,
-                                     params.ram_fee);
+                                     params.ram_fee,
+                                     charged_fee);
     if (!rate || rate == INFINITY) return 0;
 
     double min_allowed_rate = buy ? params.min_buy_rate : params.min_sell_rate;
@@ -224,29 +225,17 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
 
     /* get conversion rate again */
     asset dest = asset();
-    double conversion_rate = reserve_get_conv_rate(src, buy, dest);
+    double charged_fee = 0;
+    double conversion_rate = reserve_get_conv_rate(src, buy, dest, charged_fee);
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
-    record_profit(buy ? dest : src, buy);
     async_pay(_self, receiver, dest, dest_contract, "");
-}
 
-void AmmReserve::record_profit(asset token, bool buy) {
-    params_type params_inst(_self, _self.value);
-    auto params = params_inst.get();
-
-    double token_damount = amount_to_damount(token.amount, token.symbol.precision());
-    double dprofit = buy ?
-        (token_damount * params.profit_percent / (100.0 - params.profit_percent)) :
-        (token_damount * params.profit_percent) / 100.0;
-    int64_t profit_amount = damount_to_amount(dprofit, token.symbol.precision());
-    asset profit = asset(profit_amount, token.symbol);
-
-    state_type state_inst(_self, _self.value);
-    auto s = state_inst.get();
-    s.collected_profit_in_tokens += profit;
-    state_inst.set(s, _self);
+    asset charged_fee_asset = asset(damount_to_amount(charged_fee, EOS_PRECISION), EOS_SYMBOL);
+    if (charged_fee_asset.amount > 0) {
+        async_pay(_self, params.fee_wallet, charged_fee_asset, state.eos_contract, "payed fee");
+    }
 }
 
 AmmReserve::state_type AmmReserve::get_state_assert_admin() {
@@ -283,7 +272,7 @@ extern "C" {
         } else if (code == receiver) {
             switch (action) {
                 EOSIO_DISPATCH_HELPER(AmmReserve, (init)(quickset)(setparams)(setadmin)(setnetwork)
-                                                  (setenable)(resetprofit)(getconvrate)(withdraw))
+                                                  (setenable)(getconvrate)(withdraw))
             }
         }
         eosio_exit(0);
