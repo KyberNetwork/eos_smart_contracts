@@ -49,8 +49,8 @@ module.exports.getRate = async function(options) {
     })
     let bestRate = 0
     let tokenSymbol = (srcSymbol == "EOS" ? destSymbol : srcSymbol)
-    for (var t = 0; t < reservesReply.rows.length; t++) { 
-        if (tokenSymbol == reservesReply.rows[t].symbol.substring(2)) {
+    for (var t = 0; t < reservesReply.rows.length; t++) {
+        if (tokenSymbol == reservesReply.rows[t].symbol.split(",")[1]) {
             for (var i = 0; i < reservesReply.rows[t].reserve_contracts.length; i++) {
                 reserveName = reservesReply.rows[t].reserve_contracts[i];
                 currentRate = await reserveServices.getRate({
