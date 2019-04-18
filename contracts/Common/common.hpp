@@ -18,6 +18,8 @@ using namespace eosio;
 #define EOS_SYMBOL symbol("EOS", EOS_PRECISION)
 #define MAX_AMOUNT asset::max_amount
 #define MAX_RATE 1000000 /* up to 1M tokens per EOS */
+#define STAKE_ACCOUNT "eosio.stake"_n
+#define RAM_ACCOUNT "eosio.ram"_n
 
 struct account {
     asset    balance;

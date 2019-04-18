@@ -36,6 +36,7 @@ CONTRACT Network : public contract {
 
         TABLE reserve {
             name        contract;
+            uint64_t    num_tokens;
             uint64_t    primary_key() const { return contract.value; }
         };
 

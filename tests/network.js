@@ -413,7 +413,7 @@ describe('as admin', () => {
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
-        it('remove a pair from a reserve that does not hold that pair does nothing', async function() {
+        it('remove a pair from a reserve that does not hold that pair reverts', async function() {
             /* start with two different pairs */
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -423,8 +423,10 @@ describe('as admin', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
-            /* remove non existing pair and see all is the same */
-            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            /* remove non existing pair and see it reverts */
+            const p = networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "not listed in reserve");
+
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")

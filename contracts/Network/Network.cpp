@@ -53,8 +53,10 @@ ACTION Network::addreserve(name reserve, bool add) {
     if (add) {
         reserves_inst.emplace(_self, [&](auto& s) {
             s.contract = reserve;
+            s.num_tokens = 0;
         });
     } else {
+        eosio_assert(itr->num_tokens == 0, "reserve has listed tokens");
         reserves_inst.erase(itr);
     }
 }
@@ -65,7 +67,11 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
     get_state_assert_admin();
 
     reserves_type reserves_inst(_self, _self.value);
-    eosio_assert(reserves_inst.find(reserve.value) != reserves_inst.end(), "invalid reserve");
+    auto res_itr = reserves_inst.find(reserve.value);
+    eosio_assert(res_itr != reserves_inst.end(), "invalid reserve");
+    reserves_inst.modify(res_itr, _self, [&](auto& s) {
+        s.num_tokens += (add ? 1 : -1);
+    });
 
     reservespert_type reservespert_table_inst(_self, _self.value);
     auto itr = reservespert_table_inst.find(token_symbol.raw());
@@ -81,18 +87,17 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
         } else {
             reservespert_table_inst.modify(itr, _self, [&](auto& s) {
                 auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
-                if (res_it == s.reserve_contracts.end()) {
-                    s.reserve_contracts.push_back(reserve);
-                }
+                eosio_assert(res_it == s.reserve_contracts.end(), "already listed in reserve");
+                s.reserve_contracts.push_back(reserve);
             });
         }
-    } else if (token_exists) {
+    } else {
+        eosio_assert(token_exists, "not listed at all");
         bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&](auto& s) {
             auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
-            if (res_it != s.reserve_contracts.end()) {
-                s.reserve_contracts.erase(res_it);
-            }
+            eosio_assert(res_it != s.reserve_contracts.end(), "not listed in reserve");
+            s.reserve_contracts.erase(res_it);
             if (!s.reserve_contracts.size()) {
                 last_reserve_for_token = true;
             }
@@ -117,11 +122,10 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
 ACTION Network::withdraw(name to, asset quantity, name dest_contract, string memo) {
     eosio_assert(is_account(to), "to account does not exist");
     eosio_assert(is_account(dest_contract), "dest contract does not exist");
+    eosio_assert(quantity.is_valid() && quantity.amount > 0, "illegal quantity");
     eosio_assert(to != _self, "can not witdraw to self");
-    eosio_assert(quantity.amount > 0, "illegal quantity");
 
     get_state_assert_admin();
-
     async_pay(_self, to, quantity, dest_contract, memo);
 }
 
@@ -323,8 +327,8 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
     }
 
     auto state = state_inst.get();
-    if (from == state.admin) {
-        /* admin can deposit funds, but not trade */
+    if (from == state.admin || from == STAKE_ACCOUNT || from == RAM_ACCOUNT) {
+        /* admin and system accounts can deposit funds, but not trade */
         return;
     } else {
         /* this is a trade */
