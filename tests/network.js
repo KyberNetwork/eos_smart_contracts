@@ -385,7 +385,25 @@ describe('as admin', () => {
             await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
         });
-        xit('removed because of Duplicate transaction - listing an existing pair for a reserve does nothing, also removing a pair works', async function() {
+        it('add several tokens to same reserve and check num tokens is correct', async function() {
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].contract, reserve3Data.account)
+            assert.equal(reserves["rows"][3].num_tokens, "3")
+        
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].num_tokens, "2")
+
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].num_tokens, "0")
+        })
+        it('listing an existing pair for a reserve does nothing, also removing a pair works', async function() {
             /* start with two different pairs */
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -395,8 +413,10 @@ describe('as admin', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
-            /* add one of the existing pairs again and make sure all stays the same */
-            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            /* add one of the existing pairs and make sure it reverts */
+            const p = networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "already listed in reserve");
+
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
@@ -413,7 +433,12 @@ describe('as admin', () => {
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
-        it('remove a pair from a reserve that does not hold that pair reverts', async function() {
+        it('revert when attempting to remove a reserve from a token which has no reserves.', async function() {
+            /* remove non existing pair and see it reverts */
+            const p = networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "not listed at all");
+        })
+        it('revert when attempting to remove a reserve from a token which has only other reserves.', async function() {
             /* start with two different pairs */
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -441,6 +466,14 @@ describe('as admin', () => {
             await networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
+        })
+        it('revert when trying to remove a reserve that still has listed tokens.', async function() {
+            /* start with two different pairs */
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            const p = networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "reserve has listed tokens");
+
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
         })
         it('list more than one reserve per token, then delist', async function() {
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -623,8 +656,6 @@ describe('as non admin', () => {
             const p = networkAsAdmin.storeexprate({src: "1.000 TOKA", dest_symbol: "4,EOS"},{authorization: `${networkAdminData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
-        xit('can not call internal action trade1', async function() {})
-        xit('can not call internal action trade2', async function() {})
         it('trade from known token/eos contract with unregistered src symbol', async function() {
             const token = await aliceData.eos.contract(tokenData.account);
             const p = token.transfer({
