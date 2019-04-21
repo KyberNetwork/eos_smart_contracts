@@ -64,7 +64,7 @@ ACTION AmmReserve::setparams(double r,
                              name   fee_wallet) {
     get_state_assert_admin();
 
-    eosio_assert(r > 0 && r < 100.0, "illegal r");
+    eosio_assert(r >= 0, "illegal r");
     eosio_assert(p_min > 0, "illegal p_min");
 
     eosio_assert(max_eos_cap_buy.is_valid() && max_eos_cap_buy.amount > 0,
@@ -80,8 +80,7 @@ ACTION AmmReserve::setparams(double r,
 
     eosio_assert(max_sell_rate > 0, "illegal max_sell_rate");
     eosio_assert(min_sell_rate >= 0, "illegal min_sell_rate");
-    eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
-
+    eosio_assert(min_sell_rate <= max_sell_rate, "max_sell_rate smaller than min_sell_rate ");
 
     params_type params_inst(_self, _self.value);
     params new_params;
