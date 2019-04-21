@@ -21,6 +21,7 @@ const mosheData =   {account: "ammmoshe",   publicKey: keyPairArray[3][0], priva
 const networkData = {account: "ammnetwork", publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
 const adminData =   {account: "ammadmin",   publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
 const walletData =  {account: "ammawallet", publicKey: keyPairArray[6][0], privateKey: keyPairArray[6][1]}
+const ramData =     {account: "eosio.ram", publicKey: keyPairArray[7][0], privateKey: keyPairArray[7][1]}
 
 const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -33,7 +34,7 @@ mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 adminData.eos = Eos({ keyProvider: adminData.privateKey /* , verbose: 'false' */})
 walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
-
+ramData.eos = Eos({ keyProvider: ramData.privateKey /* , verbose: 'false' */})
 
 let reserveAsOwner
 let reserveAsAlice
@@ -53,6 +54,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:adminData.account, owner: adminData.publicKey, active: adminData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:ramData.account, owner: ramData.publicKey, active: ramData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -65,14 +67,15 @@ before("setup accounts, contracts and initial funds", async () => {
     await tokenData.eos.transaction(tokenData.account, myaccount => {
         myaccount.create(tokenData.account, '1000000000.0000 SYS', {authorization: tokenData.account})
         myaccount.issue(networkData.account, '100000.0000 SYS', 'issue', {authorization: tokenData.account})
-        myaccount.issue(reserveData.account, '100.0000 SYS', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(reserveData.account, '100.0000 SYS', 'issue', {authorization: tokenData.account})
     })
 
     await tokenData.eos.transaction(tokenData.account, myaccount => {
         myaccount.create(tokenData.account, '1000000000.0000 EOS', {authorization: tokenData.account})
         myaccount.issue(networkData.account, '100.0000 EOS', 'issue', {authorization: tokenData.account})
-        myaccount.issue(reserveData.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
-        myaccount.issue(aliceData.account,   '40.0000 EOS', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(reserveData.account, '69.3000 EOS', 'issue', {authorization: tokenData.account})
+        myaccount.issue(aliceData.account,   '40.0000 EOS', 'issue', {authorization: tokenData.account})
+        myaccount.issue(ramData.account,   '100.0000 EOS', 'issue', {authorization: tokenData.account})
     })
 
     reserveAsReserve = await reserveData.eos.contract(reserveData.account);
@@ -167,6 +170,23 @@ describe('As reserve admin', () => {
         const balanceAfter = await getUserBalance({account:reserveData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
         const balanceChange = balanceAfter - balanceBefore
         balanceChange.should.be.closeTo(23.0000, AMOUNT_PRECISON);
+    });
+    it('can not get funds from non authorized account', async function() {
+        const token = await aliceData.eos.contract(tokenData.account);
+        const p = token.transfer({from:aliceData.account, to:reserveData.account, quantity:"0.0001 EOS", memo:"just checking a refund"},
+                             {authorization: [`${aliceData.account}@active`]});
+        await ensureContractAssertionError(p, "only network can perform a trade");
+    });
+    it('can get funds from ram account', async function() {
+        const balanceBefore = await getUserBalance({account:reserveData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+
+        const token = await ramData.eos.contract(tokenData.account);
+        await token.transfer({from:ramData.account, to:reserveData.account, quantity:"0.0001 EOS", memo:"just checking a refund"},
+                             {authorization: [`${ramData.account}@active`]});
+
+        const balanceAfter = await getUserBalance({account:reserveData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+        const balanceChange = balanceAfter - balanceBefore
+        balanceChange.should.be.closeTo(0.0001, AMOUNT_PRECISON);
     });
     it('can not configure positive ram fee when fee wallet is given', async function() {
         let alteredParams = Object.assign({}, defaultParams);

@@ -64,11 +64,23 @@ ACTION AmmReserve::setparams(double r,
                              name   fee_wallet) {
     get_state_assert_admin();
 
-    eosio_assert(profit_percent < 100.0, "illegal profit_percent");
-    eosio_assert(min_sell_rate < max_sell_rate, "min_sell_rate not smaller than max_sell_rate");
+    eosio_assert(r >= 0, "illegal r");
+    eosio_assert(p_min > 0, "illegal p_min");
+
+    eosio_assert(max_eos_cap_buy.is_valid() && max_eos_cap_buy.amount > 0,
+                 "illegal max_eos_cap_buy");
+    eosio_assert(max_eos_cap_sell.is_valid() && max_eos_cap_sell.amount > 0,
+                 "illegal max_eos_cap_sell");
+
+    eosio_assert(profit_percent >= 0 && profit_percent < 100.0, "illegal profit_percent");
+    eosio_assert(ram_fee >= 0, "illegal ram_fee");
     if (profit_percent || ram_fee) {
         eosio_assert(((fee_wallet != name()) && (fee_wallet != "eosio"_n)), "no fee wallet");
     }
+
+    eosio_assert(max_sell_rate > 0, "illegal max_sell_rate");
+    eosio_assert(min_sell_rate >= 0, "illegal min_sell_rate");
+    eosio_assert(min_sell_rate <= max_sell_rate, "max_sell_rate smaller than min_sell_rate ");
 
     params_type params_inst(_self, _self.value);
     params new_params;
@@ -135,8 +147,9 @@ ACTION AmmReserve::getconvrate(asset src) {
 ACTION AmmReserve::withdraw(name to, asset quantity, name dest_contract, string memo) {
     eosio_assert(is_account(to), "to account does not exist");
     eosio_assert(is_account(dest_contract), "dest contract does not exist");
+    eosio_assert(quantity.is_valid() && quantity.amount > 0, "illegal quantity");
 
-    auto state_inst = get_state_assert_admin();
+    get_state_assert_admin();
     async_pay(_self, to, quantity, dest_contract, memo);
 }
 
@@ -230,7 +243,7 @@ void AmmReserve::trade(name from, asset src, string memo, name code, state &stat
     eosio_assert(conversion_rate > 0, "conversion rate must be bigger than 0");
     eosio_assert(conversion_rate < MAX_RATE, "fail overflow validation");
 
-    async_pay(_self, receiver, dest, dest_contract, "");
+    async_pay(_self, receiver, dest, dest_contract, "trade dest");
 
     asset charged_fee_asset = asset(damount_to_amount(charged_fee, EOS_PRECISION), EOS_SYMBOL);
     if (charged_fee_asset.amount > 0) {
@@ -255,8 +268,8 @@ void AmmReserve::transfer(name from, name to, asset quantity, string memo) {
     }
 
     auto state = state_inst.get();
-    if (from == state.admin) {
-        /* admin can deposit funds, but not trade */
+    if (from == state.admin || from == STAKE_ACCOUNT || from == RAM_ACCOUNT) {
+        /* admin and system accounts can deposit funds, but not trade */
         return;
     } else {
         trade(from, quantity, memo, _code, state);
