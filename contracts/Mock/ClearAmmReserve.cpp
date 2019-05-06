@@ -18,7 +18,6 @@ CONTRACT ClearAmmReserve : public contract {
             name        token_contract;
             name        eos_contract;
             bool        trade_enabled;
-            asset       collected_profit_in_tokens;
         };
 
         TABLE params {
@@ -27,10 +26,12 @@ CONTRACT ClearAmmReserve : public contract {
             asset       max_eos_cap_buy;
             asset       max_eos_cap_sell;
             double      profit_percent;
+            double      ram_fee;
             double      max_buy_rate;
             double      min_buy_rate;
             double      max_sell_rate;
             double      min_sell_rate;
+            name        fee_wallet;
         };
 
         TABLE rate {
