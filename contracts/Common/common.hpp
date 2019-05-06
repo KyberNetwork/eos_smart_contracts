@@ -18,6 +18,8 @@ using namespace eosio;
 #define EOS_SYMBOL symbol("EOS", EOS_PRECISION)
 #define MAX_AMOUNT asset::max_amount
 #define MAX_RATE 1000000 /* up to 1M tokens per EOS */
+#define STAKE_ACCOUNT "eosio.stake"_n
+#define RAM_ACCOUNT "eosio.ram"_n
 
 struct account {
     asset    balance;
@@ -32,8 +34,7 @@ asset get_balance(name user, name token_contract, symbol symbol) {
         /* balance was never created */
         return asset(0, symbol);
     }
-    const auto& userAcc = fromAcc.get(symbol.code().raw());
-    return userAcc.balance;
+    return itr->balance;
 }
 
 void async_pay(name from, name to, asset quantity, name dest_contract, string memo) {
