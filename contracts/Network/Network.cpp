@@ -53,8 +53,10 @@ ACTION Network::addreserve(name reserve, bool add) {
     if (add) {
         reserves_inst.emplace(_self, [&](auto& s) {
             s.contract = reserve;
+            s.num_tokens = 0;
         });
     } else {
+        eosio_assert(itr->num_tokens == 0, "reserve has listed tokens");
         reserves_inst.erase(itr);
     }
 }
@@ -65,7 +67,11 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
     get_state_assert_admin();
 
     reserves_type reserves_inst(_self, _self.value);
-    eosio_assert(reserves_inst.find(reserve.value) != reserves_inst.end(), "invalid reserve");
+    auto res_itr = reserves_inst.find(reserve.value);
+    eosio_assert(res_itr != reserves_inst.end(), "invalid reserve");
+    reserves_inst.modify(res_itr, _self, [&](auto& s) {
+        s.num_tokens += (add ? 1 : -1);
+    });
 
     reservespert_type reservespert_table_inst(_self, _self.value);
     auto itr = reservespert_table_inst.find(token_symbol.raw());
@@ -81,18 +87,17 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
         } else {
             reservespert_table_inst.modify(itr, _self, [&](auto& s) {
                 auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
-                if (res_it == s.reserve_contracts.end()) {
-                    s.reserve_contracts.push_back(reserve);
-                }
+                eosio_assert(res_it == s.reserve_contracts.end(), "already listed in reserve");
+                s.reserve_contracts.push_back(reserve);
             });
         }
-    } else if (token_exists) {
+    } else {
+        eosio_assert(token_exists, "not listed at all");
         bool last_reserve_for_token = false;
         reservespert_table_inst.modify(itr, _self, [&](auto& s) {
             auto res_it = find(s.reserve_contracts.begin(), s.reserve_contracts.end(), reserve);
-            if (res_it != s.reserve_contracts.end()) {
-                s.reserve_contracts.erase(res_it);
-            }
+            eosio_assert(res_it != s.reserve_contracts.end(), "not listed in reserve");
+            s.reserve_contracts.erase(res_it);
             if (!s.reserve_contracts.size()) {
                 last_reserve_for_token = true;
             }
@@ -117,11 +122,10 @@ ACTION Network::listpairres(name reserve, symbol token_symbol, name token_contra
 ACTION Network::withdraw(name to, asset quantity, name dest_contract, string memo) {
     eosio_assert(is_account(to), "to account does not exist");
     eosio_assert(is_account(dest_contract), "dest contract does not exist");
+    eosio_assert(quantity.is_valid() && quantity.amount > 0, "illegal quantity");
     eosio_assert(to != _self, "can not witdraw to self");
-    eosio_assert(quantity.amount > 0, "illegal quantity");
 
     get_state_assert_admin();
-
     async_pay(_self, to, quantity, dest_contract, memo);
 }
 
@@ -169,7 +173,6 @@ void Network::trade(name from, name to, asset src, string memo, state &state) {
     /* validate inputs. */
     eosio_assert(info.src.is_valid(), "invalid transfer");
     eosio_assert(info.src.amount > 0, "src must be positive");
-    eosio_assert(info.receiver != _self, "receiver can not be network contract");
 
     eosio_assert(info.src.symbol == EOS_SYMBOL || info.dest.symbol == EOS_SYMBOL, "no eos side");
     eosio_assert(info.src.symbol != info.dest.symbol, "src symbol can not equal dest symbol");
@@ -201,10 +204,10 @@ ACTION Network::trade1(trade_info info) {
 
     asset dest = calc_dest(best_rate, info.src, info.dest.symbol);
 
-    asset balance_pre = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    asset balance_pre = get_balance(info.sender, info.dest_contract, info.dest.symbol);
 
     /* do reserve trade */
-    async_pay(_self, best_reserve, info.src, info.src_contract, (name{info.receiver}).to_string());
+    async_pay(_self, best_reserve, info.src, info.src_contract, (name{info.sender}).to_string());
 
     SEND_INLINE_ACTION(*this, trade2, {_self, "active"_n},
                        {best_reserve, info, info.src, dest, balance_pre});
@@ -214,10 +217,10 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
     require_auth(_self);  // can only be called internally
 
     /* verify dest balance was indeed added to dest account */
-    auto balance_post = get_balance(info.receiver, info.dest_contract, info.dest.symbol);
+    auto balance_post = get_balance(info.sender, info.dest_contract, info.dest.symbol);
     eosio_assert(balance_post > balance_pre, "post balance not bigger than pre balance.");
     asset balance_diff = balance_post - balance_pre;
-    eosio_assert(balance_diff >= dest, "trade amount not added to receiver.");
+    eosio_assert(balance_diff >= dest, "trade dest amount not added.");
 
     /* update token stats */
     bool buy = (src.symbol == EOS_SYMBOL);
@@ -233,11 +236,11 @@ ACTION Network::trade2(name reserve, trade_info info, asset src, asset dest, ass
 
     state_type state_inst(_self, _self.value);
     name listener = state_inst.get().listener;
-    if (listener != name()) {
+    if ((listener != name()) && (listener != "eosio"_n)) {
         action {permission_level{_self, "active"_n},
                 listener,
                 "posttrade"_n,
-                make_tuple(src, dest, reserve, info.sender, info.receiver)}.send();
+                make_tuple(src, dest, reserve, info.sender)}.send();
     }
 
     SEND_INLINE_ACTION(*this, trade3, {_self, "active"_n}, {});
@@ -294,13 +297,14 @@ Network::state_type Network::get_state_assert_admin() {
 
 void Network::parse_memo(string memo, trade_info &res) {
     auto parts = split(memo, ",");
+    eosio_assert(parts.size() == EXPECTED_MEMO_LENGTH, "wrong memo length");
 
     auto sym_parts = split(parts[0], " ");
+    eosio_assert(sym_parts.size() == EXPECTED_SYMBOL_PARTS, "wrong num of symbol parts");
     res.dest = asset(0, symbol(sym_parts[1].c_str(), stoi(sym_parts[0].c_str())));
 
     res.dest_contract = name(parts[1].c_str());
-    res.receiver = name(parts[2].c_str());
-    res.min_conversion_rate = stof(parts[3].c_str());
+    res.min_conversion_rate = stof(parts[2].c_str());
 }
 
 trade_info Network::create_trade_info(string memo, name from, asset src, name src_contract) {
@@ -323,8 +327,8 @@ void Network::transfer(name from, name to, asset quantity, string memo) {
     }
 
     auto state = state_inst.get();
-    if (from == state.admin) {
-        /* admin can deposit funds, but not trade */
+    if (from == state.admin || from == STAKE_ACCOUNT || from == RAM_ACCOUNT) {
+        /* admin and system accounts can deposit funds, but not trade */
         return;
     } else {
         /* this is a trade */

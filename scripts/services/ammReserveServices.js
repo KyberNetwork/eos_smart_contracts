@@ -7,6 +7,7 @@ module.exports.getRate = async function(options) {
     srcSymbol = options.srcSymbol
     destSymbol = options.destSymbol
     srcAmount = options.srcAmount
+    destAmount = 0;
 
     let params = await getParams(eos, reserveAccount);
     let currentParams = {
@@ -14,7 +15,8 @@ module.exports.getRate = async function(options) {
         pMin:           parseFloat(params["rows"][0]["p_min"]),
         maxEosCapBuy:   parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
         maxEosCapSell:  parseFloat(params["rows"][0]["max_eos_cap_buy"].split(" ")[0]),
-        profitPercent:     parseFloat(params["rows"][0]["profit_percent"]),
+        profitPercent:  parseFloat(params["rows"][0]["profit_percent"]),
+        ramFee:         parseFloat(params["rows"][0]["ram_fee"]),
         maxBuyRate:     parseFloat(params["rows"][0]["max_buy_rate"]),
         minBuyRate:     parseFloat(params["rows"][0]["min_buy_rate"]),
         maxSellRate:    parseFloat(params["rows"][0]["max_sell_rate"]),
@@ -22,59 +24,41 @@ module.exports.getRate = async function(options) {
     }
 
     let e = await getReserveEos(eos, reserveAccount, eosTokenAccount);
-
     let rate
-    let deltaE
-    let deltaT;
 
-    isBuy = (srcSymbol == "EOS")
-    if (isBuy) {
-        deltaE = srcAmount;
-        if (srcAmount > currentParams.maxEosCapBuy) return 0;
-        rate = (deltaE == 0) ? buyRateZeroQuantity(currentParams, e) :
-                               buyRate(currentParams, e, deltaE)
+    buy = (srcSymbol == "EOS")
+
+    if (!srcAmount) {
+        p = pOfE(currentParams.r, currentParams.pMin, e)
+        preProfitRate = buy ? (1 / p) : p;
+        rate = ((100.0 - currentParams.profitPercent) * preProfitRate) / 100.0; 
     } else {
-        deltaT = valueAfterReducingprofit(currentParams, srcAmount);
-        if (deltaT == 0) {
-            rate = sellRateZeroQuantity(currentParams, e)
-            deltaE = 0
+        if (buy) {
+            chargedFee = (currentParams.profitPercent * srcAmount) / 100.0;
+            if (currentParams.ramFee >= (srcAmount - chargedFee)) {
+                chargedFee = 0;
+                return 0;
+            }
+            chargedFee += currentParams.ramFee;
+            destAmount = deltaTFunc(currentParams, e, srcAmount - chargedFee);
         } else {
-            rateAnddeltaE = sellRate(currentParams, e, srcAmount, deltaT);
-            rate = rateAnddeltaE[0]
-            deltaE = rateAnddeltaE[1]
+            deltaE = deltaEFunc(currentParams, e, srcAmount);
+            chargedFee = (currentParams.profitPercent * deltaE) / 100.0;
+            destAmount = deltaE - chargedFee;
         }
-        if (deltaE > currentParams.maxEosCapSell) return 0;
+        rate = destAmount / srcAmount;
     }
-    return rateAfterValidation(currentParams, rate, isBuy);
+
+    if (buy) {
+        if (srcAmount > currentParams.maxEosCapBuy) return 0;
+    } else {
+        if (destAmount > currentParams.maxEosCapSell) return 0;
+    }
+
+    return rateAfterValidation(currentParams, rate, buy);
 }
 
 /////////// internal function /////////// 
-
-function buyRate(currentParams, e, deltaE) {
-    let deltaT = deltaTFunc(currentParams, e, deltaE);
-    deltaT = valueAfterReducingprofit(currentParams, deltaT);
-    return deltaT / deltaE;
-}
-
-function buyRateZeroQuantity(currentParams, e) {
-    let ratePreReduction = 1 / pOfE(currentParams.r, currentParams.pMin, e);
-    return valueAfterReducingprofit(currentParams, ratePreReduction);
-}
-
-function sellRate(currentParams, e, srcAmount, deltaT) {
-    let deltaE = deltaEFunc(currentParams, e, deltaT);
-    let rate = deltaE / srcAmount;
-    return [rate, deltaE]
-}
-
-function sellRateZeroQuantity(currentParams, e) {
-    let ratePreReduction = pOfE(currentParams.r, currentParams.pMin, e);
-    return valueAfterReducingprofit(currentParams, ratePreReduction);
-}
-
-function valueAfterReducingprofit(currentParams, value) {
-    return ((100.0 - currentParams.profitPercent) * value) / 100.0;
-}
 
 function deltaTFunc(currentParams, e, deltaE) {
     return (-1.0) *

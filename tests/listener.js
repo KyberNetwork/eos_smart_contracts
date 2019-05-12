@@ -14,11 +14,12 @@ const RATE_PRECISON =   0.00000001
 
 /* Assign keypairs. to accounts. Use unique name prefixes to prevent collisions between test modules. */
 const keyPairArray = JSON.parse(fs.readFileSync("tests/keys.json"))
-const tokenData =         {account: "listoken",   publicKey: keyPairArray[0][0], privateKey: keyPairArray[0][1]}
-const reserveData =      {account: "lisreserve", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
-const networkData =       {account: "lisnetwork", publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
-const listenerData =       {account: "lislistener", publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
-const aliceData =         {account: "lisalice",   publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
+const tokenData =    {account: "listoken",   publicKey: keyPairArray[0][0], privateKey: keyPairArray[0][1]}
+const reserveData =  {account: "lisreserve", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const networkData =  {account: "lisnetwork", publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
+const listenerData = {account: "lislistener",publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
+const aliceData =    {account: "lisalice",   publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
+const walletData =   {account: "liswallet",  publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
 
 const systemData =  {account: "eosio", publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -29,6 +30,7 @@ reserveData.eos = Eos({ keyProvider: reserveData.privateKey /* , verbose: 'false
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 listenerData.eos = Eos({ keyProvider: listenerData.privateKey /* , verbose: 'false' */})
 aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */})
+walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
 
 let defaultParams
 
@@ -40,6 +42,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:listenerData.account, owner: listenerData.publicKey, active: listenerData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:aliceData.account, owner: aliceData.publicKey, active: aliceData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -90,8 +93,10 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
+        ram_fee: "0.0",
         max_sell_rate: "0.5555",
-        min_sell_rate: "0.00000555"
+        min_sell_rate: "0.00000555",
+        fee_wallet: walletData.account
     }
 
     await reserve.setparams(defaultParams,{authorization: `${reserveData.account}@active`});
@@ -118,7 +123,7 @@ describe('as alice', () => {
             from:aliceData.account,
             to:networkData.account,
             quantity:"5.0000 EOS",
-            memo:"4 TOK," + tokenData.account + "," + aliceData.account + ",0.000000"},
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
             {authorization: [`${aliceData.account}@active`]});
         
         const eosAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
@@ -134,7 +139,7 @@ describe('as alice', () => {
             from:aliceData.account,
             to:networkData.account,
             quantity:"5.0000 EOS",
-            memo:"4 TOK," + tokenData.account + "," + aliceData.account + ",0.000000"},
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
             {authorization: [`${aliceData.account}@active`]});
         
         const eosAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
@@ -154,7 +159,7 @@ describe('as alice', () => {
             from:aliceData.account,
             to:networkData.account,
             quantity:"10.0000 EOS",
-            memo:"4 TOK," + tokenData.account + "," + aliceData.account + ",0.000000"},
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
             {authorization: [`${aliceData.account}@active`]});
         
         const eosAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:aliceData.eos})
@@ -179,7 +184,7 @@ describe('as alice', () => {
             from:aliceData.account,
             to:networkData.account,
             quantity:"1.0000 TOK",
-            memo:"4 EOS," + tokenData.account + "," + aliceData.account + ",0.000000"},
+            memo:"4 EOS," + tokenData.account + ",0.000000"},
             {authorization: [`${aliceData.account}@active`]}
         );
 

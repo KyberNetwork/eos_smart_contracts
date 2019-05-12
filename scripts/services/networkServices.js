@@ -49,8 +49,8 @@ module.exports.getRate = async function(options) {
     })
     let bestRate = 0
     let tokenSymbol = (srcSymbol == "EOS" ? destSymbol : srcSymbol)
-    for (var t = 0; t < reservesReply.rows.length; t++) { 
-        if (tokenSymbol == reservesReply.rows[t].symbol.substring(2)) {
+    for (var t = 0; t < reservesReply.rows.length; t++) {
+        if (tokenSymbol == reservesReply.rows[t].symbol.split(",")[1]) {
             for (var i = 0; i < reservesReply.rows[t].reserve_contracts.length; i++) {
                 reserveName = reservesReply.rows[t].reserve_contracts[i];
                 currentRate = await reserveServices.getRate({
@@ -108,10 +108,9 @@ module.exports.trade = async function(options) {
     let srcSymbol = options.srcSymbol
     let destPrecision = options.destPrecision
     let destSymbol = options.destSymbol
-    let destAccount = options.destAccount
     let minConversionRate = options.minConversionRate
 
-    let memo = `${destPrecision} ${destSymbol},${destTokenAccount},${destAccount},${minConversionRate}`
+    let memo = `${destPrecision} ${destSymbol},${destTokenAccount},${minConversionRate}`
     let asset = `${srcAmount} ${srcSymbol}`
 
     const token = await eos.contract(srcTokenAccount);

@@ -30,12 +30,16 @@ const reserve5Data =      {account: "netreserve5", publicKey: keyPairArray[1][0]
 const reserve5AdminData = {account: "netadmin5",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve6Data =      {account: "netreserve11", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const reserve6AdminData = {account: "netadmin11",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve7Data =      {account: "netreserve12", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
+const reserve7AdminData = {account: "netadmin12",   publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 
 
 const aliceData =         {account: "netalice",   publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
 const mosheData =         {account: "netmoshe",   publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
 const networkData =       {account: "netnetwork", publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
 const networkAdminData =  {account: "netadmin", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+const walletData =        {account: "netawallet", publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+
 
 const systemData =  {account: "eosio",      publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
@@ -55,10 +59,14 @@ reserve5Data.eos = Eos({ keyProvider: reserve5Data.privateKey /* , verbose: 'fal
 reserve5AdminData.eos = Eos({ keyProvider: reserve5AdminData.privateKey /* , verbose: 'false' */})
 reserve6Data.eos = Eos({ keyProvider: reserve6Data.privateKey /* , verbose: 'false' */})
 reserve6AdminData.eos = Eos({ keyProvider: reserve6AdminData.privateKey /* , verbose: 'false' */})
+reserve7Data.eos = Eos({ keyProvider: reserve7Data.privateKey /* , verbose: 'false' */})
+reserve7AdminData.eos = Eos({ keyProvider: reserve7AdminData.privateKey /* , verbose: 'false' */})
 aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */})
 mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */})
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 networkAdminData.eos = Eos({ keyProvider: networkAdminData.privateKey /* , verbose: 'false' */})
+walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
+
 
 let networkAsAdmin
 let networkAsNetwork
@@ -70,12 +78,14 @@ let reserve3AsAdmin
 let reserve4AsAdmin
 let reserve5AsAdmin
 let reserve6AsAdmin
+let reserve7AsAdmin
 let reserve1
 let reserve2
 let reserve3
 let reserve4
 let reserve5
 let reserve6
+let reserve7
 let reserve1AsNetwork
 let reserve2AsNetwork
 
@@ -92,6 +102,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve4Data.account, owner: reserve4Data.publicKey, active: reserve4Data.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve5Data.account, owner: reserve5Data.publicKey, active: reserve5Data.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve6Data.account, owner: reserve6Data.publicKey, active: reserve6Data.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve7Data.account, owner: reserve7Data.publicKey, active: reserve7Data.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:aliceData.account, owner: aliceData.publicKey, active: aliceData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:mosheData.account, owner: mosheData.publicKey, active: mosheData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
@@ -101,8 +112,10 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve4AdminData.account, owner: reserve4AdminData.publicKey, active: reserve4AdminData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve5AdminData.account, owner: reserve5AdminData.publicKey, active: reserve5AdminData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve6AdminData.account, owner: reserve6AdminData.publicKey, active: reserve6AdminData.publicKey})});
-
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserve7AdminData.account, owner: reserve7AdminData.publicKey, active: reserve7AdminData.publicKey})});
+    
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkAdminData.account, owner: networkAdminData.publicKey, active: networkAdminData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
 
     /* deploy contracts */
     await tokenData.eos.setcode(tokenData.account, 0, 0, fs.readFileSync(`contracts/Mock/Token/Token.wasm`));
@@ -121,6 +134,8 @@ before("setup accounts, contracts and initial funds", async () => {
     await reserve5Data.eos.setabi(reserve5Data.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
     await reserve6Data.eos.setcode(reserve6Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
     await reserve6Data.eos.setabi(reserve6Data.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
+    await reserve7Data.eos.setcode(reserve7Data.account, 0, 0, fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.wasm`));
+    await reserve7Data.eos.setabi(reserve7Data.account, JSON.parse(fs.readFileSync(`contracts/Reserve/AmmReserve/AmmReserve.abi`)))
     await networkData.eos.setcode(networkData.account, 0, 0, fs.readFileSync(`contracts/Network/Network.wasm`));
     await networkData.eos.setabi(networkData.account, JSON.parse(fs.readFileSync(`contracts/Network/Network.abi`)))
 
@@ -135,12 +150,14 @@ before("setup accounts, contracts and initial funds", async () => {
     reserve4AsAdmin = await reserve1AdminData.eos.contract(reserve4Data.account);
     reserve5AsAdmin = await reserve1AdminData.eos.contract(reserve5Data.account);
     reserve6AsAdmin = await reserve1AdminData.eos.contract(reserve6Data.account);
+    reserve7AsAdmin = await reserve7AdminData.eos.contract(reserve7Data.account);
     reserve1 = await reserve1Data.eos.contract(reserve1Data.account);
     reserve2 = await reserve2Data.eos.contract(reserve2Data.account);
     reserve3 = await reserve3Data.eos.contract(reserve3Data.account);
     reserve4 = await reserve4Data.eos.contract(reserve4Data.account);
     reserve5 = await reserve5Data.eos.contract(reserve5Data.account);
     reserve6 = await reserve6Data.eos.contract(reserve6Data.account);
+    reserve7 = await reserve7Data.eos.contract(reserve7Data.account);
     reserve1AsNetwork = await networkData.eos.contract(reserve1Data.account);
     reserve2AsNetwork = await networkData.eos.contract(reserve2Data.account);
 
@@ -177,6 +194,12 @@ before("setup accounts, contracts and initial funds", async () => {
     })
 
     await tokenData.eos.transaction(tokenData.account, myaccount => {
+        myaccount.create(tokenData.account, '100000000.0000000000 TOKE', {authorization: tokenData.account})
+        myaccount.issue(reserve7Data.account, '1000.0000000000 TOKE', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(aliceData.account, '1000.0000000000 TOKE', 'deposit', {authorization: tokenData.account})
+    })
+
+    await tokenData.eos.transaction(tokenData.account, myaccount => {
         myaccount.create(tokenData.account, '100000000.0000 MOCKA', {authorization: tokenData.account})
         myaccount.issue(aliceData.account, '1000.0000 MOCKA', 'deposit', {authorization: tokenData.account})
     })
@@ -198,6 +221,7 @@ before("setup accounts, contracts and initial funds", async () => {
         myaccount.issue(reserve4Data.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(reserve5Data.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(reserve6Data.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(reserve7Data.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(aliceData.account, '100.0000 EOS', 'deposit', {authorization: tokenData.account})
     })
 
@@ -256,6 +280,15 @@ before("setup accounts, contracts and initial funds", async () => {
         enable_trade: 1,
         },{authorization: `${reserve6Data.account}@active`});
 
+    await reserve7.init({
+        token_symbol: "10,TOKE",
+        admin: reserve7AdminData.account,
+        network_contract: networkData.account,
+        token_contract: tokenData.account,
+        eos_contract: tokenData.account,
+        enable_trade: 1,
+        },{authorization: `${reserve7Data.account}@active`});
+
     /* after init reserves (from reserve contract), renounce permission */
     await renouncePermToOnlyCode(reserve1Data.eos, reserve1Data.account)
     await renouncePermToOnlyCode(reserve2Data.eos, reserve2Data.account)
@@ -263,6 +296,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await renouncePermToOnlyCode(reserve4Data.eos, reserve4Data.account)
     await renouncePermToOnlyCode(reserve5Data.eos, reserve5Data.account)
     await renouncePermToOnlyCode(reserve6Data.eos, reserve6Data.account)
+    await renouncePermToOnlyCode(reserve7Data.eos, reserve7Data.account)
 
     /*set reserve params */
     defaultParams = {
@@ -271,8 +305,10 @@ before("setup accounts, contracts and initial funds", async () => {
         max_eos_cap_buy: "20.0000 EOS",
         max_eos_cap_sell: "20.0000 EOS",
         profit_percent: "0.25",
+        ram_fee: "0.0",
         max_sell_rate: "0.5555",
-        min_sell_rate: "0.00000555"
+        min_sell_rate: "0.00000555",
+        fee_wallet: walletData.account
     }
 
     await reserve1AsAdmin.setparams(defaultParams,{authorization: `${reserve1AdminData.account}@active`});
@@ -281,7 +317,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await reserve4AsAdmin.setparams(defaultParams,{authorization: `${reserve4AdminData.account}@active`});
     await reserve5AsAdmin.setparams(defaultParams,{authorization: `${reserve5AdminData.account}@active`});
     await reserve6AsAdmin.setparams(defaultParams,{authorization: `${reserve6AdminData.account}@active`});
-        
+    await reserve7AsAdmin.setparams(defaultParams,{authorization: `${reserve7AdminData.account}@active`});
     /* network configurations */
 
     /* init network */
@@ -378,7 +414,25 @@ describe('as admin', () => {
             await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
         });
-        xit('removed because of Duplicate transaction - listing an existing pair for a reserve does nothing, also removing a pair works', async function() {
+        it('add several tokens to same reserve and check num tokens is correct', async function() {
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].contract, reserve3Data.account)
+            assert.equal(reserves["rows"][3].num_tokens, "3")
+        
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].num_tokens, "2")
+
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve3Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            reserves = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reserve', json: true});
+            assert.equal(reserves["rows"][3].num_tokens, "0")
+        })
+        it('listing an existing pair for a reserve does nothing, also removing a pair works', async function() {
             /* start with two different pairs */
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -388,8 +442,10 @@ describe('as admin', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
-            /* add one of the existing pairs again and make sure all stays the same */
-            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            /* add one of the existing pairs and make sure it reverts */
+            const p = networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "already listed in reserve");
+
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
@@ -406,7 +462,12 @@ describe('as admin', () => {
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
         })
-        it('remove a pair from a reserve that does not hold that pair does nothing', async function() {
+        it('revert when attempting to remove a reserve from a token which has no reserves.', async function() {
+            /* remove non existing pair and see it reverts */
+            const p = networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "not listed at all");
+        })
+        it('revert when attempting to remove a reserve from a token which has only other reserves.', async function() {
             /* start with two different pairs */
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -416,8 +477,10 @@ describe('as admin', () => {
             assert.equal(reservesPerTable["rows"][0].reserve_contracts[0], reserve1Data.account)
             assert.equal(reservesPerTable["rows"][0].reserve_contracts.length, 1)
 
-            /* remove non existing pair and see all is the same */
-            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            /* remove non existing pair and see it reverts */
+            const p = networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "not listed in reserve");
+
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 2)
             assert.equal(reservesPerTable["rows"][0].symbol, "4,SYS")
@@ -432,6 +495,14 @@ describe('as admin', () => {
             await networkAsAdmin.listpairres({add: 0, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             reservesPerTable = await networkData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'reservespert', json: true});
             assert.equal(reservesPerTable["rows"].length, 0)
+        })
+        it('revert when trying to remove a reserve that still has listed tokens.', async function() {
+            /* start with two different pairs */
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
+            const p = networkAsAdmin.addreserve({reserve:reserve1Data.account, add:0},{authorization: `${networkAdminData.account}@active`});
+            await ensureContractAssertionError(p, "reserve has listed tokens");
+
+            await networkAsAdmin.listpairres({add: 0, reserve:reserve1Data.account, token_symbol:"2,TOKB", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
         })
         it('list more than one reserve per token, then delist', async function() {
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -474,6 +545,7 @@ describe('as non admin', () => {
             await networkAsAdmin.addreserve({reserve:reserve4Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.addreserve({reserve:reserve5Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.addreserve({reserve:reserve6Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.addreserve({reserve:reserve7Data.account, add:1},{authorization: `${networkAdminData.account}@active`});
 
             await networkAsAdmin.listpairres({add: 1, reserve:reserve1Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve2Data.account, token_symbol:"3,TOKA", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
@@ -481,6 +553,7 @@ describe('as non admin', () => {
             await networkAsAdmin.listpairres({add: 1, reserve:reserve4Data.account, token_symbol:"1,TOKC", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve5Data.account, token_symbol:"0,TOKD", token_contract:tokenData.account},{authorization: `${networkAdminData.account}@active`});
             await networkAsAdmin.listpairres({add: 1, reserve:reserve6Data.account, token_symbol:"4,SYS", token_contract:tokenData.account}, {authorization: `${networkAdminData.account}@active`});
+            await networkAsAdmin.listpairres({add: 1, reserve:reserve7Data.account, token_symbol:"10,TOKE", token_contract:tokenData.account}, {authorization: `${networkAdminData.account}@active`});
         });
         it('can not set admin', async function() {
             const p = networkAsAlice.setadmin({admin: aliceData.account},{authorization: `${aliceData.account}@active`});
@@ -579,7 +652,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
 
             tokenStatsAfter = await networkAdminData.eos.getTableRows({code: networkData.account, scope: networkData.account, table: 'tokenstats', json: true});
@@ -597,7 +670,7 @@ describe('as non admin', () => {
                 quantity:"5.0000 EOS",
                 memo:"bad memo"},
                 {authorization: [`${aliceData.account}@active`]});
-            await ensureContractAssertionError(p, "Abort Called");
+            await ensureContractAssertionError(p, "wrong memo length");
         })
         
         it('check trade reverts on big min conversion rate', async function() {
@@ -606,7 +679,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",100.000000"},
+                memo:"4 SYS," + tokenData.account  + ",100.000000"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "rate < min conversion rate");
         })
@@ -614,15 +687,13 @@ describe('as non admin', () => {
             const p = networkAsAdmin.storeexprate({src: "1.000 TOKA", dest_symbol: "4,EOS"},{authorization: `${networkAdminData.account}@active`});
             await ensureContractAssertionError(p, "Missing required authority");
         })
-        xit('can not call internal action trade1', async function() {})
-        xit('can not call internal action trade2', async function() {})
         it('trade from known token/eos contract with unregistered src symbol', async function() {
             const token = await aliceData.eos.contract(tokenData.account);
             const p = token.transfer({
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 MOCKA",
-                memo:"4 EOS,"  + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 EOS,"  + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unlisted token");
         })
@@ -632,7 +703,7 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 SYS",
-                memo:"4 EOS," + tokenData.account + "," +  mosheData.account + ",0.000001"},
+                memo:"4 EOS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unexpected src contract");
         })
@@ -642,14 +713,73 @@ describe('as non admin', () => {
                 from:aliceData.account,
                 to:networkData.account,
                 quantity:"5.0000 EOS",
-                memo:"4 SYS," + tokenData.account + "," + mosheData.account + ",0.000001"},
+                memo:"4 SYS," + tokenData.account + ",0.000001"},
                 {authorization: [`${aliceData.account}@active`]});
             await ensureContractAssertionError(p, "unexpected src contract");
         })
 
         describe('using services', () => {
+        it('buy token with precision 10', async function() {
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKE', tokenContract:tokenData.account, eos:mosheData.eos})
+
+            let calcRate = await networkServices.getRate({
+                eos:networkData.eos,
+                srcSymbol:'EOS',
+                destSymbol:'TOKE',
+                srcAmount:2.0132,
+                networkAccount:networkData.account,
+                eosTokenAccount:tokenData.account})
+            let calcDestAmount = roundDown(srcAmount * calcRate, 10);
+
+            await networkServices.trade({
+                eos:aliceData.eos,
+                networkAccount:networkData.account,
+                userAccount:aliceData.account, 
+                srcAmount:"2.0132",
+                srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
+                srcSymbol:"EOS",
+                destPrecision:10,
+                destSymbol:"TOKE",
+                minConversionRate:"0.000001"
+            })
+
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKE', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceChange = balanceAfter - balanceBefore
+            balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
+        });
+        it('sell token with precision 10', async function() {
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+
+            let calcRate = await networkServices.getRate({
+                eos:networkData.eos,
+                srcSymbol:'TOKE',
+                destSymbol:'EOS',
+                srcAmount:1.3678123453,
+                networkAccount:networkData.account,
+                eosTokenAccount:tokenData.account})
+            let calcDestAmount = roundDown(srcAmount * calcRate, 4);
+
+            await networkServices.trade({
+                eos:aliceData.eos,
+                networkAccount:networkData.account,
+                userAccount:aliceData.account, 
+                srcAmount:"1.3678123453",
+                srcTokenAccount:tokenData.account,
+                destTokenAccount:tokenData.account,
+                srcSymbol:"TOKE",
+                destPrecision:4,
+                destSymbol:"EOS",
+                minConversionRate:"0.000001"
+            })
+
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceChange = balanceAfter - balanceBefore
+
+            balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
+        });
         it('buy token with precision 4', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -670,16 +800,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:4,
                 destSymbol:"SYS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'SYS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         });
         it('sell token with precision 4', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -700,17 +829,16 @@ describe('as non admin', () => {
                 srcSymbol:"SYS",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         });
         it('buy token with precision 3', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -731,17 +859,16 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:3,
                 destSymbol:"TOKA",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
             return
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 3', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -762,18 +889,17 @@ describe('as non admin', () => {
                 srcSymbol:"TOKA",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
 
         })
         it('buy token with precision 2', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -794,16 +920,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:2,
                 destSymbol:"TOKB",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKB', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 2', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -824,17 +949,16 @@ describe('as non admin', () => {
                 srcSymbol:"TOKB",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('buy token with precision 1', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -855,16 +979,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:1,
                 destSymbol:"TOKC",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKC', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 1', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -885,17 +1008,16 @@ describe('as non admin', () => {
                 srcSymbol:"TOKC",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
             it('buy token with precision 0', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -916,16 +1038,15 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destPrecision:0,
                 destSymbol:"TOKD",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'TOKD', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
         })
         it('sell token with precision 0', async function() {
-            const balanceBefore = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceBefore = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
 
             let calcRate = await networkServices.getRate({
                 eos:networkData.eos,
@@ -946,11 +1067,10 @@ describe('as non admin', () => {
                 srcSymbol:"TOKD",
                 destPrecision:4,
                 destSymbol:"EOS",
-                destAccount:mosheData.account,
                 minConversionRate:"0.000001"
             })
 
-            const balanceAfter = await getUserBalance({account:mosheData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
+            const balanceAfter = await getUserBalance({account:aliceData.account, symbol:'EOS', tokenContract:tokenData.account, eos:mosheData.eos})
             const balanceChange = balanceAfter - balanceBefore
 
             balanceChange.should.be.closeTo(calcDestAmount, AMOUNT_PRECISON);
