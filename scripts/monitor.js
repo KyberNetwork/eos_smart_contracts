@@ -92,7 +92,10 @@ async function main() {
     } else if (mode == "compare_status") {
         status = await status()
         oldData = JSON.parse(fs.readFileSync(file1, 'utf8'));
-        output = await compare(oldData, status)
+        compareResult = await compare(oldData, status)
+        status["compare"] = compareResult
+        status["compared_file"] = file1
+        output = status
     } else if (mode == "compare_files") {
         oldData1 = JSON.parse(fs.readFileSync(file1, 'utf8'));
         oldData2 = JSON.parse(fs.readFileSync(file2, 'utf8'));
