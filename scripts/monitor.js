@@ -5,7 +5,7 @@ const networkServices = require('../scripts/services/networkServices')
 const networkAccount = "yolonetworkx"
 const eos = Eos({
     keyProvider: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-    httpEndpoint: 'https://api.eossweden.se',
+    httpEndpoint:'https://api.eosnewyork.io',
     chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
 });
 
