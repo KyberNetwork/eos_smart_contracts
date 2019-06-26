@@ -18,9 +18,17 @@ const tokenData =    {account: "rebtoken",   publicKey: keyPairArray[0][0], priv
 const reserveData =  {account: "rebreserve", publicKey: keyPairArray[1][0], privateKey: keyPairArray[1][1]}
 const networkData =  {account: "rebnetwork", publicKey: keyPairArray[2][0], privateKey: keyPairArray[2][1]}
 const rebateData =   {account: "reblistener",publicKey: keyPairArray[3][0], privateKey: keyPairArray[3][1]}
-const aliceData =    {account: "rebalice",   publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
-const walletData =   {account: "rebwallet",  publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
 
+// alice pattern is     v,v,v..v,v
+const aliceData =    {account: "rebalice",   publicKey: keyPairArray[4][0], privateKey: keyPairArray[4][1]}
+
+// moshe pattern is     x,v,v..x,x
+const mosheData =    {account: "rebmoshe",   publicKey: keyPairArray[5][0], privateKey: keyPairArray[5][1]}
+
+//yosi pattern is     v,x,v..x,x
+const yosiData =    {account: "rebyosi",   publicKey: keyPairArray[6][0], privateKey: keyPairArray[6][1]}
+
+const walletData =   {account: "rebwallet",  publicKey: keyPairArray[7][0], privateKey: keyPairArray[7][1]}
 const systemData =  {account: "eosio", publicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", privateKey: "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"}
 
 /* create eos handler objects */
@@ -30,7 +38,10 @@ reserveData.eos = Eos({ keyProvider: reserveData.privateKey /* , verbose: 'false
 networkData.eos = Eos({ keyProvider: networkData.privateKey /* , verbose: 'false' */})
 rebateData.eos = Eos({ keyProvider: rebateData.privateKey /* , verbose: 'false' */})
 aliceData.eos = Eos({ keyProvider: aliceData.privateKey /* , verbose: 'false' */})
+mosheData.eos = Eos({ keyProvider: mosheData.privateKey /* , verbose: 'false' */})
+yosiData.eos = Eos({ keyProvider: yosiData.privateKey /* , verbose: 'false' */})
 walletData.eos = Eos({ keyProvider: walletData.privateKey /* , verbose: 'false' */})
+
 
 let defaultParams
 
@@ -42,6 +53,8 @@ before("setup accounts, contracts and initial funds", async () => {
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:networkData.account, owner: networkData.publicKey, active: networkData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:rebateData.account, owner: rebateData.publicKey, active: rebateData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:aliceData.account, owner: aliceData.publicKey, active: aliceData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:mosheData.account, owner: mosheData.publicKey, active: mosheData.publicKey})});
+    await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:yosiData.account, owner: yosiData.publicKey, active: yosiData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:walletData.account, owner: walletData.publicKey, active: walletData.publicKey})});
 
     /* deploy contracts */
@@ -57,6 +70,8 @@ before("setup accounts, contracts and initial funds", async () => {
     /* create contract objects */
     networkAsNetwork = await networkData.eos.contract(networkData.account);
     networkAsAlice = await aliceData.eos.contract(networkData.account);
+    networkAsMoshe = await mosheData.eos.contract(networkData.account);
+    networkAsYosi = await yosiData.eos.contract(networkData.account);   
     reserve = await reserveData.eos.contract(reserveData.account);
     rebate = await rebateData.eos.contract(rebateData.account);
 
@@ -65,6 +80,8 @@ before("setup accounts, contracts and initial funds", async () => {
         myaccount.create(tokenData.account, '1000000000.0000 TOK', {authorization: tokenData.account})
         myaccount.issue(reserveData.account, '10000.0000 TOK', 'deposit', {authorization: tokenData.account})
         myaccount.issue(aliceData.account, '100.0000 TOK', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(mosheData.account, '100.0000 TOK', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(yosiData.account, '100.0000 TOK', 'deposit', {authorization: tokenData.account})
         myaccount.issue(rebateData.account, '100.0000 TOK', 'deposit', {authorization: tokenData.account})
     })
 
@@ -80,6 +97,8 @@ before("setup accounts, contracts and initial funds", async () => {
         myaccount.issue(rebateData.account, '10000.0000 EOS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(reserveData.account, '69.3000 EOS', 'deposit', {authorization: tokenData.account})
         myaccount.issue(aliceData.account, '100.0000 EOS', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(mosheData.account, '100.0000 EOS', 'deposit', {authorization: tokenData.account})
+        myaccount.issue(yosiData.account, '100.0000 EOS', 'deposit', {authorization: tokenData.account})
     })
 
     /* init reserves, setparams */
@@ -118,7 +137,8 @@ before("setup accounts, contracts and initial funds", async () => {
     /* config rebate */
     await rebate.config({network_contract:networkData.account,
                          token_contract:tokenData.account,
-                         default_reward:"1.0000 TOKA"},
+                         default_reward:"1.0000 TOKA",
+                         round_seconds: 3 },
                         {authorization: `${rebateData.account}@active`})
 
     /* renounce reserve control */
@@ -128,10 +148,10 @@ before("setup accounts, contracts and initial funds", async () => {
 })
 
 describe('in first period', () => {
-    it('rebate is returned on first trade', async function() {
-        const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+    it('rebate is returned on first trade', async function() { // alice + yosi
+        tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
 
-        const token = await aliceData.eos.contract(tokenData.account);
+        token = await aliceData.eos.contract(tokenData.account);
         await token.transfer({
             from:aliceData.account,
             to:networkData.account,
@@ -139,11 +159,27 @@ describe('in first period', () => {
             memo:"4 TOK," + tokenData.account + ",0.000000"},
             {authorization: [`${aliceData.account}@active`]});
         
-        const tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 1);
+        
+        //// trade also from yosi, to support later test cases:
+        
+        tokenBefore = await getUserBalance({account:yosiData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        token = await yosiData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:yosiData.account,
+            to:networkData.account,
+            quantity:"5.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${yosiData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:yosiData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:yosiData.eos})
         balanceChange =  tokenAfter - tokenBefore 
         assert.equal(balanceChange, 1);
     })
-    it('rebate is not returned on second trade in same period', async function() {
+    it('rebate is not returned on second trade in same period', async function() { // alice
         const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
 
         const token = await aliceData.eos.contract(tokenData.account);
@@ -161,20 +197,152 @@ describe('in first period', () => {
 });
 
 describe('in second period', () => {
-    xit('double rebate is returned if traded in first and second period', async function(){});
-    xit('regular rebate is returned if traded only in second period', async function(){});
-    xit('rebate is not returned on second trade in same period', async function() {});
+    it('double rebate is returned if traded in first and second period', async function(){ // alice
+        await snooze(3000);
+
+        const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        const token = await aliceData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:aliceData.account,
+            to:networkData.account,
+            quantity:"6.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${aliceData.account}@active`]});
+        
+        const tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 2);
+    });
+    it('regular rebate is returned if traded only in second period', async function(){ // moshe
+        tokenBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        token = await mosheData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:mosheData.account,
+            to:networkData.account,
+            quantity:"1.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${mosheData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 1);
+    });
+    it('rebate is not returned on second trade in same period', async function() {  // moshe
+        tokenBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        token = await mosheData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:mosheData.account,
+            to:networkData.account,
+            quantity:"2.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${mosheData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 0);
+    });
 });
 
 describe('in third period', () => {
-    xit('triple rebate is returned if traded in first, second and third period', async function(){});
-    xit('regular rebate is returned if traded only in first period', async function(){});
-    xit('double rebate is returned if traded only in second period', async function(){});
-    xit('rebate is not returned on second trade in same period', async function() {});
+    it('triple rebate is returned if traded in first, second and third period', async function(){ // alice
+        await snooze(3000);
+
+        const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        const token = await aliceData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:aliceData.account,
+            to:networkData.account,
+            quantity:"6.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${aliceData.account}@active`]});
+        
+        const tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 3);
+    });
+    it('regular rebate is returned if traded only in first period', async function() { // yosi
+        tokenBefore = await getUserBalance({account:yosiData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        token = await yosiData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:yosiData.account,
+            to:networkData.account,
+            quantity:"5.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${yosiData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:yosiData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:yosiData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 1);
+    });
+    it('double rebate is returned if traded only in second period', async function() {  // moshe
+        tokenBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        token = await mosheData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:mosheData.account,
+            to:networkData.account,
+            quantity:"2.1000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${mosheData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 2);
+    });
+    it('rebate is not returned on second trade in same period', async function() { // moshe
+        tokenBefore = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        token = await mosheData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:mosheData.account,
+            to:networkData.account,
+            quantity:"2.2000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${mosheData.account}@active`]});
+        
+        tokenAfter = await getUserBalance({account:mosheData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:mosheData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 0);
+    });
+});
+
+describe('in 5th period', () => {
+    it('regular rebate is returned if not traded in fourth round', async function(){ // alice
+        await snooze(2 * 3000);
+        const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        const token = await aliceData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:aliceData.account,
+            to:networkData.account,
+            quantity:"7.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${aliceData.account}@active`]});
+        
+        const tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 1);
+    });
 });
 
 describe('in 6th period', () => {
-    xit('no rebate is returned', async function(){});
+    it('no rebate is returned', async function(){ // alice
+        await snooze(3000);
+        const tokenBefore = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+
+        const token = await aliceData.eos.contract(tokenData.account);
+        await token.transfer({
+            from:aliceData.account,
+            to:networkData.account,
+            quantity:"7.0000 EOS",
+            memo:"4 TOK," + tokenData.account + ",0.000000"},
+            {authorization: [`${aliceData.account}@active`]});
+        
+        const tokenAfter = await getUserBalance({account:aliceData.account, symbol:'TOKA', tokenContract:tokenData.account, eos:aliceData.eos})
+        balanceChange =  tokenAfter - tokenBefore 
+        assert.equal(balanceChange, 0);
+    });
 });
 
 });

@@ -16,6 +16,7 @@ CONTRACT Rebate : public contract {
             name        token_contract;
             asset       default_reward;
             uint64_t    start_time_seconds;
+            uint64_t    round_seconds;
         };
 
         TABLE userreward {
@@ -29,7 +30,9 @@ CONTRACT Rebate : public contract {
 
         ACTION config(name  network_contract,
                       name  token_contract,
-                      asset default_reward) {
+                      asset default_reward,
+                      uint64_t round_seconds ) // configureable for testing
+        {
             eosio_assert(is_account(network_contract), "network contract does not exist");
             eosio_assert(is_account(token_contract), "token contract does not exist");
 
@@ -43,7 +46,8 @@ CONTRACT Rebate : public contract {
                     network_contract,
                     token_contract,
                     default_reward,
-                    start_time_seconds
+                    start_time_seconds,
+                    round_seconds == 0 ? SECONDS_PER_WEEK : round_seconds
             };
             state_inst.set(new_state, _self);
         }
@@ -55,7 +59,7 @@ CONTRACT Rebate : public contract {
             require_auth(state.network_contract);
 
             uint64_t current_time_seconds = current_time() / 1000000;
-            uint64_t week_index = (current_time_seconds - state.start_time_seconds) / SECONDS_PER_WEEK;
+            uint64_t week_index = (current_time_seconds - state.start_time_seconds) / state.round_seconds;
 
             userreward_type userreward_inst(_self, _self.value);
             auto itr = userreward_inst.find(sender.value);
