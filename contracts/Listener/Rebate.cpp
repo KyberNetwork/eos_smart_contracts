@@ -6,6 +6,7 @@ using namespace eosio;
 
 #define SECONDS_PER_WEEK 604800
 #define WEEKS_TO_RUN 5
+#define INITIAL_REWARD_FACTOR 1.0
 
 CONTRACT Rebate : public contract {
     public:
@@ -17,6 +18,7 @@ CONTRACT Rebate : public contract {
             asset       default_reward;
             uint64_t    start_time_seconds;
             uint64_t    round_seconds;
+            double      reward_factor;
         };
 
         TABLE userreward {
@@ -47,9 +49,18 @@ CONTRACT Rebate : public contract {
                     token_contract,
                     default_reward,
                     start_time_seconds,
-                    round_seconds == 0 ? SECONDS_PER_WEEK : round_seconds
+                    round_seconds == 0 ? SECONDS_PER_WEEK : round_seconds,
+                    INITIAL_REWARD_FACTOR
             };
             state_inst.set(new_state, _self);
+        }
+
+        ACTION setfactor(double reward_factor) {
+            state_type state_inst(_self, _self.value);
+
+            auto s = state_inst.get();
+            s.reward_factor = reward_factor;
+            state_inst.set(s, _self);
         }
 
         ACTION posttrade(asset src, asset dest, name reserve, name sender) {
@@ -90,10 +101,11 @@ CONTRACT Rebate : public contract {
                 });
             }
 
+            asset factored_reward = calc_dest(state.reward_factor, reward, reward.symbol);
             asset balance = get_balance(_self, state.token_contract, state.default_reward.symbol);
 
-            if (balance >= reward) {
-                async_pay(_self, sender, reward, state.token_contract, "yolo rebate");
+            if (balance >= factored_reward) {
+                async_pay(_self, sender, factored_reward, state.token_contract, "yolo rebate");
             }
 
             return;
@@ -104,7 +116,7 @@ extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
         if (code == receiver) {
             switch (action) {
-                EOSIO_DISPATCH_HELPER( Rebate, (config)(posttrade))
+                EOSIO_DISPATCH_HELPER( Rebate, (config)(posttrade)(setfactor))
             }
         }
         eosio_exit(0);
