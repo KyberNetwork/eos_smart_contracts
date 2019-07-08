@@ -56,6 +56,7 @@ CONTRACT Rebate : public contract {
         }
 
         ACTION setfactor(double reward_factor) {
+            require_auth(_self);
             state_type state_inst(_self, _self.value);
 
             auto s = state_inst.get();
