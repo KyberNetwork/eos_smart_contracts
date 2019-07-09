@@ -64,7 +64,8 @@ async function compare(data1, data2) {
     tokenstats2 = data2["tokenstats"]["rows"]
     
     diffDict = {}
-    
+    diffDict["total_eos"] = 0
+
     for (i in tokenstats1) {
         symbol1 = tokenstats1[i]["token_counter"].split(" ")[1]
         for (j in tokenstats2) {
@@ -74,6 +75,7 @@ async function compare(data1, data2) {
                 eos2 = tokenstats2[j]["eos_counter"].split(" ")[0]
                 diff = parseFloat(eos2) - parseFloat(eos1)
                 diffDict[symbol1] = diff
+                diffDict["total_eos"] = diffDict["total_eos"] + diff
                 break
             }
         }
@@ -101,7 +103,7 @@ async function main() {
         oldData2 = JSON.parse(fs.readFileSync(file2, 'utf8'));
         output = await compare(oldData1, oldData2)
     } else {
-        throw "invalid mode"
+        throw "invalid mode " + mode
     }
     console.log(JSON.stringify(output, null, 4))
 }
