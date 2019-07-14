@@ -47,6 +47,7 @@ let defaultParams
 
 describe(path.basename(__filename), function () {
 before("setup accounts, contracts and initial funds", async () => {
+    
     /* create accounts */
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:tokenData.account, owner: tokenData.publicKey, active: tokenData.publicKey})});
     await systemData.eos.transaction(tr => {tr.newaccount({creator: "eosio", name:reserveData.account, owner: reserveData.publicKey, active: reserveData.publicKey})});
@@ -66,6 +67,7 @@ before("setup accounts, contracts and initial funds", async () => {
     await networkData.eos.setabi(networkData.account, JSON.parse(fs.readFileSync(`contracts/Network/Network.abi`)))
     await rebateData.eos.setcode(rebateData.account, 0, 0, fs.readFileSync(`contracts/Listener/Rebate.wasm`));
     await rebateData.eos.setabi(rebateData.account, JSON.parse(fs.readFileSync(`contracts/Listener/Rebate.abi`)))
+
 
     /* create contract objects */
     networkAsNetwork = await networkData.eos.contract(networkData.account);
@@ -197,6 +199,14 @@ describe('in first period', () => {
 });
 
 describe('in second period', () => {
+    it('deploying new rebate contract in same account', async function(){
+        await rebateData.eos.setcode(rebateData.account, 0, 0, fs.readFileSync(`contracts/Listener/LimitedRebate.wasm`));
+        await rebateData.eos.setabi(rebateData.account, JSON.parse(fs.readFileSync(`contracts/Listener/LimitedRebate.abi`)))
+
+        rebate = await rebateData.eos.contract(rebateData.account);
+        await rebate.initusers({}, {authorization: `${rebateData.account}@active`})
+        
+    });
     it('double rebate is returned if traded in first and second period', async function(){ // alice
         await snooze(8000);
 
