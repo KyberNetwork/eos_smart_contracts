@@ -14,7 +14,7 @@ async function status() {
     dict = { "network_tables" : {}, "reserves_stats" : {} }
     summary = { "reserves_stats" : {}, "tokenstats" : {} }
 
-    tables = ["tokenstats", "state", "reserve", "reservespert"]
+    tables = ["tokenstats", "state", "reserve"]
     for (i in tables) {
         dict["network_tables"][tables[i]] = await eos.getTableRows({code: networkAccount, scope:networkAccount, table:tables[i], json: true})
     }
@@ -30,6 +30,7 @@ async function status() {
             dict["reserves_stats"][reserve][tables[j]] = await eos.getTableRows({code: reserve, scope:reserve, table:tables[j], json: true})
         }
         tokenContract = dict["reserves_stats"][reserve]["state"]["rows"][0]["token_contract"]
+        tokenPercision = dict["reserves_stats"][reserve]["state"]["rows"][0]["token_symbol"].split(",")[0]
         tokenSymbol = dict["reserves_stats"][reserve]["state"]["rows"][0]["token_symbol"].split(",")[1]
         minSellRate = dict["reserves_stats"][reserve]["params"]["rows"][0]["min_sell_rate"]
 
@@ -39,7 +40,9 @@ async function status() {
         let sellRate = await networkServices.getRate({
             eos:eos,
             srcSymbol:tokenSymbol,
+            srcPrecision:tokenPercision,
             destSymbol:"EOS",
+            destPrecision:4,
             srcAmount:0,
             networkAccount:networkAccount,
             eosTokenAccount:"eosio.token"

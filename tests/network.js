@@ -726,6 +726,8 @@ describe('as non admin', () => {
                 eos:networkData.eos,
                 srcSymbol:'EOS',
                 destSymbol:'TOKE',
+                srcPrecision:4,
+                destPrecision:10, 
                 srcAmount:2.0132,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
@@ -755,6 +757,8 @@ describe('as non admin', () => {
                 eos:networkData.eos,
                 srcSymbol:'TOKE',
                 destSymbol:'EOS',
+                srcPrecision:10,
+                destPrecision:4,
                 srcAmount:1.3678123453,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
@@ -786,6 +790,8 @@ describe('as non admin', () => {
                 srcSymbol:'EOS',
                 destSymbol:'SYS',
                 srcAmount:2.0132,
+                srcPrecision:4,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
@@ -815,6 +821,8 @@ describe('as non admin', () => {
                 srcSymbol:'SYS',
                 destSymbol:'EOS',
                 srcAmount:1.3678,
+                srcPrecision:4,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
@@ -845,6 +853,8 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destSymbol:"TOKA",
                 srcAmount:1.1134,
+                srcPrecision:4,
+                destPrecision:3,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 3);
@@ -875,6 +885,8 @@ describe('as non admin', () => {
                 srcSymbol:'TOKA',
                 destSymbol:'EOS',
                 srcAmount:1.367,
+                srcPrecision:3,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
@@ -906,6 +918,8 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destSymbol:"TOKB",
                 srcAmount:1.1103,
+                srcPrecision:4,
+                destPrecision:2,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate,2);
@@ -935,6 +949,8 @@ describe('as non admin', () => {
                 srcSymbol:'TOKB',
                 destSymbol:'EOS',
                 srcAmount:2.31,
+                srcPrecision:2,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
@@ -965,6 +981,8 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destSymbol:"TOKC",
                 srcAmount:3.7107,
+                srcPrecision:4,
+                destPrecision:1,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate,1);
@@ -994,6 +1012,8 @@ describe('as non admin', () => {
                 srcSymbol:'TOKC',
                 destSymbol:'EOS',
                 srcAmount:3.9,
+                srcPrecision:1,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
@@ -1024,6 +1044,8 @@ describe('as non admin', () => {
                 srcSymbol:"EOS",
                 destSymbol:"TOKD",
                 srcAmount:3.7107,
+                srcPrecision:4,
+                destPrecision:0,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate,0);
@@ -1053,6 +1075,8 @@ describe('as non admin', () => {
                 srcSymbol:'TOKD',
                 destSymbol:'EOS',
                 srcAmount:4,
+                srcPrecision:0,
+                destPrecision:4,
                 networkAccount:networkData.account,
                 eosTokenAccount:tokenData.account})
             let calcDestAmount = roundDown(srcAmount * calcRate, 4);
