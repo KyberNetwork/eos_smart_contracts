@@ -40,15 +40,21 @@ module.exports.getRate = async function(options) {
     srcAmount = options.srcAmount
     networkAccount = options.networkAccount
     eosTokenAccount = options.eosTokenAccount
+    srcPrecision = options.srcPrecision
+    destPrecision = options.destPrecision
 
+    let tokenSymbol = (srcSymbol == "EOS" ? destSymbol : srcSymbol)
+    let tokenPrecision = (srcSymbol == "EOS" ? destPrecision : srcPrecision)
+    let tokenFullSymbol = tokenPrecision + ',' + tokenSymbol
     let reservesReply = await eos.getTableRows({
         code: networkAccount,
         scope:networkAccount,
         table:"reservespert",
-        json: true
+        json: true,
+        lower_bound: tokenFullSymbol,
+        upper_bound: tokenFullSymbol
     })
     let bestRate = 0
-    let tokenSymbol = (srcSymbol == "EOS" ? destSymbol : srcSymbol)
     for (var t = 0; t < reservesReply.rows.length; t++) {
         if (tokenSymbol == reservesReply.rows[t].symbol.split(",")[1]) {
             for (var i = 0; i < reservesReply.rows[t].reserve_contracts.length; i++) {
