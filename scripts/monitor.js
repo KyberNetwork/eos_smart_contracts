@@ -16,7 +16,7 @@ async function status() {
 
     tables = ["tokenstats", "state", "reserve"]
     for (i in tables) {
-        dict["network_tables"][tables[i]] = await eos.getTableRows({code: networkAccount, scope:networkAccount, table:tables[i], json: true})
+        dict["network_tables"][tables[i]] = await eos.getTableRows({code: networkAccount, scope:networkAccount, table:tables[i], json: true, limit:100})
     }
 
     reserves = dict["network_tables"]["reserve"]["rows"]
