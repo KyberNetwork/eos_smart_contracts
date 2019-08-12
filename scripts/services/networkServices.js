@@ -205,21 +205,21 @@ module.exports.getLastDaysVolume = async function getLastDaysVolume(options){
 
     // get past block num
     res = await this.getBlockByDate({
-        dfuseKey:KEY,
+        dfuseKey:dfuseKey,
         date:pastDate
     })
     let pastBlockNum = JSON.parse(res)["block"]["num"]
 
     // get current volume
     currentVolume = await this.getVolume({
-        dfuseKey:KEY,
+        dfuseKey:dfuseKey,
         blockNum: currentBlockNum,
         networkContract:networkContract
     })
 
     // get past volume
     pastVolume = await this.getVolume({
-        dfuseKey:KEY,
+        dfuseKey:dfuseKey,
         blockNum: pastBlockNum,
         networkContract:networkContract
     })
